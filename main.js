@@ -352,17 +352,133 @@ function handleFileSelect(event) {
     reader.readAsDataURL(file);
 }
 
+let currentCameraStream = null;
+let currentFacingMode = 'environment'; // ノート撮影用に標準で背面カメラを優先
+
+function triggerCameraInput() {
+    // WebRTCライブカメラ撮影モーダルの起動を試みる
+    if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+        const modal = document.getElementById('camera-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            startCamera().catch(err => {
+                console.warn('Direct getUserMedia failed, falling back to native camera input:', err);
+                triggerNativeCameraFallback();
+            });
+            return;
+        }
+    }
+    // WebRTC未対応または失敗時は端末のカメラInputを直接起動
+    triggerNativeCameraFallback();
+}
+
+function triggerNativeCameraFallback() {
+    stopAndCloseCamera();
+    const cameraInput = document.getElementById('camera-input');
+    if (cameraInput) {
+        cameraInput.value = '';
+        cameraInput.click();
+    }
+}
+
+async function startCamera() {
+    if (currentCameraStream) {
+        currentCameraStream.getTracks().forEach(track => track.stop());
+    }
+
+    const constraints = {
+        video: {
+            facingMode: currentFacingMode,
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+        },
+        audio: false
+    };
+
+    try {
+        currentCameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        const video = document.getElementById('camera-video');
+        if (video) {
+            video.srcObject = currentCameraStream;
+            await video.play();
+        }
+    } catch (err) {
+        // environment（背面）で失敗した場合、汎用カメラ指定で再試行
+        if (currentFacingMode === 'environment') {
+            currentFacingMode = 'user';
+            currentCameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            const video = document.getElementById('camera-video');
+            if (video) {
+                video.srcObject = currentCameraStream;
+                await video.play();
+            }
+        } else {
+            throw err;
+        }
+    }
+}
+
+function toggleCameraFacing() {
+    currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+    startCamera().catch(e => {
+        console.warn('Failed to switch camera facing:', e);
+    });
+}
+
+function takeCameraSnapshot() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    if (!video || !canvas) return;
+
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    try {
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        compressImage(dataUrl, 1200, 1200, 0.8, (compressedDataUrl) => {
+            const imagePreview = document.getElementById('image-preview');
+            const previewArea = document.getElementById('preview-area');
+            const uploadZone = document.getElementById('upload-zone');
+            const backButton = document.getElementById('review-back-button');
+
+            if (imagePreview && previewArea && uploadZone) {
+                imagePreview.src = compressedDataUrl;
+                previewArea.classList.remove('hidden');
+                uploadZone.classList.add('hidden');
+                if (backButton) backButton.classList.add('hidden');
+            }
+            stopAndCloseCamera();
+        });
+    } catch (e) {
+        console.error('Failed to capture snapshot:', e);
+        stopAndCloseCamera();
+    }
+}
+
+function stopAndCloseCamera() {
+    if (currentCameraStream) {
+        currentCameraStream.getTracks().forEach(track => track.stop());
+        currentCameraStream = null;
+    }
+    const modal = document.getElementById('camera-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
 // ==========================================
 // 🗑️ 選択した写真をクリアする関数
 // ==========================================
 function clearFileSelect() {
     const fileInput = document.getElementById('upload-input');
+    const cameraInput = document.getElementById('camera-input');
     const imagePreview = document.getElementById('image-preview');
     const previewArea = document.getElementById('preview-area');
     const uploadZone = document.getElementById('upload-zone');
     const backButton = document.getElementById('review-back-button');
     
     if (fileInput) fileInput.value = '';
+    if (cameraInput) cameraInput.value = '';
     if (imagePreview) imagePreview.src = '';
     if (previewArea) previewArea.classList.add('hidden');
     if (uploadZone) uploadZone.classList.remove('hidden');

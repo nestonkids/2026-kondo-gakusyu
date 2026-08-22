@@ -124,33 +124,57 @@
         </div>
 
         <div id="review-screen" class="screen">
-            <div class="glass-card">
-                <h2 class="screen-title">授業内容を復習する</h2>
+            <div class="glass-card" style="max-width: 680px; margin: 0 auto;">
+                <h2 class="screen-title" style="margin-bottom: 6px;">📖 授業内容を復習する</h2>
+                <p style="color: #546e7a; font-size: 0.95rem; margin-bottom: 20px; text-align: center;">ノートやプリントの写真を読み込んで、わかるくんと一緒に復習しよう！</p>
+                
                 <div class="upload-zone" id="upload-zone">
                     <img src="assets/book-image.png" alt="Book" class="upload-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <span style="display:none; font-size:4rem;">📚</span>
-                    <p>ノートやプリントの写真をアップロードして復習しよう</p>
+                    <p style="font-weight: 700; color: #2c3e50; margin-bottom: 2px;">写真の読み込み方法を選んでね</p>
                     
+                    <!-- 選択肢ボタンエリア -->
+                    <div class="photo-choice-actions">
+                        <button class="choice-action-card camera-btn" onclick="triggerCameraInput()">
+                            <span class="choice-icon">📸</span>
+                            <div class="choice-text">
+                                <strong>カメラで撮る</strong>
+                                <small>その場で写真を撮影</small>
+                            </div>
+                        </button>
+                        <button class="choice-action-card upload-btn" onclick="triggerFileInput()">
+                            <span class="choice-icon">📁</span>
+                            <div class="choice-text">
+                                <strong>アップロード</strong>
+                                <small>保存した写真から選ぶ</small>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <p style="font-size: 0.8rem; color: #95a5a6; margin-top: 8px;">※パソコンの場合はここに写真をドラッグ＆ドロップでも読み込めます</p>
+                    
+                    <!-- 隠しファイル入力要素 -->
                     <input type="file" id="upload-input" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
-                    <button class="glass-button" onclick="triggerFileInput()">写真をえらぶ</button>
+                    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleFileSelect(event)">
                 </div>
                 
-                <div id="preview-area" class="hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 450px; margin-bottom: 20px;">
-                    <p style="margin-bottom: 15px; font-weight: bold; font-size: 1.1rem;">選択された写真</p>
-                    <img id="image-preview" src="" alt="プレビュー" style="max-width: 100%; max-height: 300px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); margin-bottom: 20px;">
+                <div id="preview-area" class="hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 480px; margin-bottom: 20px;">
+                    <p style="margin-bottom: 12px; font-weight: bold; font-size: 1.1rem; color: #2c3e50;">✨ 選択された写真</p>
+                    <div style="position: relative; max-width: 100%; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); margin-bottom: 18px;">
+                        <img id="image-preview" src="" alt="プレビュー" style="max-width: 100%; max-height: 320px; display: block; object-fit: contain; background: rgba(0,0,0,0.02);">
+                    </div>
                     
                     <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; align-items: center;">
-                        <button class="start-plan-btn" style="width: 220px; background: linear-gradient(135deg, #3498db, #2980b9); box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);" onclick="startReviewProcess()">🚀 復習を始める</button>
-                        <button class="back-button" onclick="switchScreen('home')" style="width: 220px;">🏠 戻る</button>
+                        <button class="start-plan-btn" style="width: 240px; background: linear-gradient(135deg, #3498db, #2980b9); box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25); font-size: 1.05rem;" onclick="startReviewProcess()">🚀 復習を始める</button>
+                        <button class="back-button" onclick="switchScreen('home')" style="width: 240px;">🏠 ホームへ戻る</button>
                     </div>
 
-                    <div style="margin-top: 15px; display: flex; gap: 15px;">
-                        <span style="font-size: 0.85rem; color: #7f8c8d; cursor: pointer; text-decoration: underline;" onclick="triggerFileInput()">画像を差し替える</span>
-                        <span style="font-size: 0.85rem; color: #e74c3c; cursor: pointer; text-decoration: underline;" onclick="clearFileSelect()">削除する</span>
+                    <div style="margin-top: 15px; display: flex; gap: 20px; font-size: 0.9rem;">
+                        <span style="color: var(--accent-blue); cursor: pointer; text-decoration: underline; font-weight: 600;" onclick="triggerCameraInput()">📸 撮り直す</span>
+                        <span style="color: var(--accent-blue); cursor: pointer; text-decoration: underline; font-weight: 600;" onclick="triggerFileInput()">📁 選び直す</span>
+                        <span style="color: #e74c3c; cursor: pointer; text-decoration: underline; font-weight: 600;" onclick="clearFileSelect()">🗑️ 削除する</span>
                     </div>
                 </div>
-
-
 
                 <button class="back-button" id="review-back-button" onclick="switchScreen('home')">🏠 戻る</button>
             </div>
@@ -632,6 +656,31 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- 📷 リアルタイムカメラ撮影モーダル -->
+    <div id="camera-modal" class="modal-overlay hidden" onclick="stopAndCloseCamera()">
+        <div class="modal-content camera-modal-content" onclick="event.stopPropagation()">
+            <div class="camera-modal-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 8px;">📸 ノートを撮影</h3>
+                <button class="modal-close-btn" onclick="stopAndCloseCamera()" title="閉じる">✕</button>
+            </div>
+            <div class="camera-viewfinder">
+                <video id="camera-video" autoplay playsinline></video>
+                <canvas id="camera-canvas" class="hidden"></canvas>
+                <div class="camera-guide-overlay">
+                    <div class="camera-frame-guide"></div>
+                    <span class="camera-hint-text">枠内にノートやプリントを合わせてください</span>
+                </div>
+            </div>
+            <div class="camera-modal-controls">
+                <button class="camera-control-btn" onclick="toggleCameraFacing()" title="カメラ切り替え">🔄 切り替え</button>
+                <button class="camera-shutter-btn" onclick="takeCameraSnapshot()" title="シャッター">
+                    <div class="shutter-inner"></div>
+                </button>
+                <button class="camera-control-btn" onclick="triggerNativeCameraFallback()" title="端末のカメラアプリを起動">📁 端末カメラ</button>
+            </div>
+        </div>
     </div>
 
     <button class="settings-button" onclick="switchScreen('settings')">⚙️</button>
