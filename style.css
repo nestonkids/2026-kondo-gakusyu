@@ -31,6 +31,22 @@ html {
     text-rendering: optimizeLegibility;
 }
 
+/* 🌊 全体カスタムスクロールバー（スリム＆モダンデザイン） */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.65);
+}
+
 body {
     background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #e0f2fe 100%) no-repeat center center fixed;
     background-size: cover;
@@ -39,11 +55,11 @@ body {
     min-height: 100vh;
     min-height: 100dvh;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
     overflow-x: hidden;
-    overscroll-behavior-y: none;
-    overscroll-behavior: none;
+    overflow-y: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -57,86 +73,94 @@ body {
     display: none !important;
 }
 
-/* 💻 メインコンテナ */
+/* 💻 メインコンテナ（全画面フルビュー対応） */
 .container {
-    width: 95vw;
-    max-width: 1200px;
-    height: 85vh;
+    width: 100%;
+    max-width: 1440px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 16px 20px;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
+    justify-content: stretch;
+    align-items: stretch;
     position: relative;
+    box-sizing: border-box;
 }
 
-/* 画面の切り替え設定（transform変形を除去して文字の滲み・揺れを防止） */
+/* 画面の切り替え設定（自然な縦拡張と全画面フィット） */
 .screen {
-    position: absolute;
+    display: none;
     width: 100%;
-    height: 100%;
+    min-height: calc(100vh - 32px);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .screen.active {
+    display: flex;
     opacity: 1;
     pointer-events: auto;
 }
 
-/* ✨ クリーンカードデザイン（backdrop-filterを除去して文字揺れを根本解消） */
+/* ✨ クリーンカードデザイン（スリムパディングで表示領域を最大化） */
 .glass-card {
     background: #ffffff;
     border: 1px solid var(--glass-border);
-    border-radius: 32px;
-    padding: 35px;
+    border-radius: 24px;
+    padding: 24px 28px;
     width: 100%;
-    height: 100%;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    min-height: 100%;
+    flex: 1;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: stretch;
+    box-sizing: border-box;
 }
 
-/* 🏠 ホーム画面の左右レイアウト */
+/* 🏠 ホーム画面の左右レイアウト（ワイドフルビュー） */
 .home-layout {
     display: flex;
     flex-direction: row;
     width: 100%;
-    height: 100%;
-    align-items: center;
+    flex: 1;
+    align-items: stretch;
     justify-content: space-between;
-    gap: 25px;
+    gap: 28px;
 }
 
 /* 👈 左パネル：メニューボタン側 */
 .left-panel {
-    flex: 0 0 32%;
+    flex: 0 0 340px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
+    gap: 16px;
 }
 
 .left-panel .quick-actions {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 14px;
     width: 100%;
 }
 
 .action-card {
     background: rgba(255, 255, 255, 0.7);
     border: 1px solid var(--glass-border);
-    border-radius: 22px;
+    border-radius: 20px;
     padding: 18px 22px;
     display: flex;
     align-items: center;
     gap: 15px;
     cursor: pointer;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     width: 100%;
     text-align: left;
@@ -144,7 +168,7 @@ body {
 
 .action-card:hover {
     border-color: var(--accent-blue);
-    box-shadow: 0 10px 24px rgba(52, 152, 219, 0.12);
+    box-shadow: 0 8px 20px rgba(52, 152, 219, 0.12);
     background: #ffffff;
 }
 
@@ -154,30 +178,30 @@ body {
     border-color: rgba(155, 89, 182, 0.4);
 }
 .action-card.accent-card:hover {
-    box-shadow: 0 10px 24px rgba(155, 89, 182, 0.15);
+    box-shadow: 0 8px 20px rgba(155, 89, 182, 0.15);
     border-color: var(--accent-purple);
     background: #ffffff;
 }
 
 .action-image { width: 42px; height: auto; }
 .action-icon-styled { font-size: 2.1rem; width: 42px; text-align: center; }
-.action-text h3 { font-size: 1.2rem; font-weight: 600; color: var(--text-color); line-height: 1.3; }
+.action-text h3 { font-size: 1.15rem; font-weight: 700; color: var(--text-color); line-height: 1.35; }
 
 
-/* 👉 右パネル：学習記録側 */
+/* 👉 右パネル：学習記録側（広大スペース） */
 .right-panel {
-    flex: 0 0 65%;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
+    width: auto;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    overflow: hidden;
+    justify-content: flex-start;
     border-left: 1px solid rgba(0, 0, 0, 0.08);
-    padding-left: 35px;
+    padding-left: 28px;
 }
 
 .panel-subtitle {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     margin-bottom: 12px;
     opacity: 0.8;
     text-align: left;
@@ -315,31 +339,33 @@ body {
     background: #475569;
 }
 
-/* 横スクロールコンテナ */
+/* 📜 学習記録グリッドコンテナ（ワイド表示） */
 .history-list-container.horizontal-scroll {
-    display: flex;
-    flex-direction: row;
-    gap: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
     width: 100%;
-    padding: 10px 2px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    padding: 8px 2px;
+    max-height: 520px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-/* 縦長・細長カードのデザイン */
+/* 縦長カードのデザイン */
 .history-card-horizontal {
     position: relative;
-    flex: 0 0 140px;
-    height: 200px;
+    width: 100%;
+    min-height: 180px;
     background: #ffffff;
     border: 1px solid var(--glass-border);
-    border-radius: 22px;
-    padding: 18px 10px;
+    border-radius: 18px;
+    padding: 16px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    box-sizing: border-box;
 }
 .history-card-horizontal:hover { border-color: var(--accent-blue); box-shadow: 0 8px 20px rgba(52, 152, 219, 0.12); }
 
@@ -778,14 +804,14 @@ body {
 }
 
 .teaching-card-container {
-    padding: 24px 28px;
+    padding: 18px 24px;
     justify-content: flex-start;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    max-height: 100%;
+    height: calc(100vh - 32px);
+    min-height: 640px;
     overflow: hidden;
-    gap: 16px;
+    gap: 12px;
     box-sizing: border-box;
 }
 
@@ -794,7 +820,7 @@ body {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding-bottom: 12px;
+    padding-bottom: 10px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     flex-shrink: 0;
 }
@@ -817,7 +843,7 @@ body {
 
 .teaching-layout {
     display: flex;
-    gap: 24px;
+    gap: 20px;
     width: 100%;
     flex: 1;
     min-height: 0;
@@ -825,10 +851,10 @@ body {
 }
 
 .left-teaching-panel {
-    flex: 0 0 280px;
+    flex: 0 0 350px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     min-height: 0;
 }
 
@@ -841,8 +867,8 @@ body {
     align-items: center;
     justify-content: center;
     flex: 1;
-    min-height: 180px;
-    max-height: 380px;
+    min-height: 200px;
+    max-height: 100%;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 }
 
@@ -1100,10 +1126,10 @@ body {
     background: #ffffff;
     color: #2c3e50;
     width: 100%;
-    max-width: 750px;
-    margin: 10px auto;
+    max-width: 880px;
+    margin: 10px auto 30px auto;
     padding: 35px 45px;
-    border-radius: 8px;
+    border-radius: 16px;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06), 0 5px 15px rgba(0, 0, 0, 0.02);
     border: 1px solid rgba(0, 0, 0, 0.08);
     position: relative;
@@ -1468,11 +1494,9 @@ body {
 .history-list-container:not(.horizontal-scroll) {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
     width: 100%;
-    max-height: 55vh;
-    overflow-y: auto;
-    padding-right: 8px;
+    max-height: none;
     margin-top: 15px;
     margin-bottom: 25px;
 }
