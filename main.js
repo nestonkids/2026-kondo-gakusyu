@@ -650,6 +650,7 @@ function startReviewProcess() {
 
     // ローディング画面に切り替え
     switchScreen('loading');
+    renderAIPersonaBanners();
     
     const imagePreview = document.getElementById('image-preview');
     const teachingPreview = document.getElementById('teaching-image-preview');
@@ -1392,6 +1393,9 @@ function openHistoryChat(id) {
     // インプット欄をクリア
     document.getElementById('history-chat-input').value = '';
 
+    // バナーの描画
+    renderAIPersonaBanners();
+
     // 画面切り替え
     switchScreen('history-chat');
 }
@@ -1439,20 +1443,27 @@ function sendHistoryChatQuestion() {
 
         // チャット履歴の収集
         const contents = [];
+        const aiProfilePrompt = buildAISystemPromptProfile();
         
         contents.push({
             role: 'user',
             parts: [{
-                text: `システム指示:
-あなたは親しみやすいAI学習アシスタントです。
+                text: `【指導・対話ルール】
+あなたは親身で教え上手なAI学習アシスタント「わかるくん」です。
 過去に行った学習履歴について、ユーザーから追加の質問を受けています。
-過去の会話の流れを踏まえて、わかりやすく的確に回答してください。
-回答はMarkdown形式でフォーマットして読みやすくしてください。`
+
+${aiProfilePrompt}
+
+【対話ルール】
+1. 過去の会話の流れとノート内容を踏まえて、生徒の質問に分かりやすく的確に回答してください。
+2. 設定されたペルソナ・口調・熱量・厳しさ・例え話をはっきりと反映させて回答してください。
+3. 数式や記号は必ず LaTeX 形式（\`$数式$\`）で記述してください。
+4. 回答はMarkdown形式で見やすく整理してください。`
             }]
         });
         contents.push({
             role: 'model',
-            parts: [{ text: "了解しました。過去の学習履歴を踏まえ、ユーザーからの追加質問に対してわかりやすく回答します。" }]
+            parts: [{ text: "了解しました！設定された指導スタイルに合わせて、過去の学習内容と生徒の質問にしっかり回答します。" }]
         });
 
         activeHistoryItem.chat.forEach(msg => {
@@ -1558,114 +1569,135 @@ const allSettingSliders = {
 };
 
 /**
- * 生徒の個性や希望スタイルに合わせてAI指導方針を自然に構築
+ * 現在設定されているAIペルソナのバッジタグ一覧を取得
+ */
+function getActiveAIPersonaTags() {
+    const getVal = (key) => parseInt(localStorage.getItem(key) || '50', 10);
+    const otherPrefs = (localStorage.getItem('other-preferences') || '').trim();
+    const tags = [];
+
+    const tone = getVal('tone-preference');
+    if (tone >= 55) tags.push('💬 タメ口');
+    else if (tone <= 45) tags.push('🎩 丁寧な敬語');
+
+    const praise = getVal('praise-preference');
+    if (praise >= 55) tags.push('🎉 大絶賛');
+    else if (praise <= 45) tags.push('⚖️ 冷静・事実重視');
+
+    const energy = getVal('energy-preference');
+    if (energy >= 55) tags.push('🔥 超熱血');
+    else if (energy <= 45) tags.push('🧊 クール・知的');
+
+    const strictness = getVal('strictness-preference');
+    if (strictness >= 55) tags.push('⚡ 厳格指導');
+    else if (strictness <= 45) tags.push('🌸 超甘口・全肯定');
+
+    const analogy = getVal('analogy-preference');
+    if (analogy >= 55) tags.push('🍕 例え話重視');
+    else if (analogy <= 45) tags.push('📐 数式・理論直球');
+
+    const length = getVal('length-preference');
+    if (length >= 55) tags.push('📚 詳細解説');
+    else if (length <= 45) tags.push('⚡ 要点集中');
+
+    if (otherPrefs) {
+        const shortPref = otherPrefs.length > 10 ? otherPrefs.slice(0, 10) + '…' : otherPrefs;
+        tags.push(`⭐ ${shortPref}`);
+    }
+
+    return tags;
+}
+
+/**
+ * 生徒の個性や希望スタイルに合わせてAI指導方針を明確に構築
  */
 function buildAISystemPromptProfile() {
     const getVal = (key) => parseInt(localStorage.getItem(key) || '50', 10);
     const otherPrefs = (localStorage.getItem('other-preferences') || '').trim();
 
-    const activity = getVal('activity-preference');
     const tone = getVal('tone-preference');
     const praise = getVal('praise-preference');
     const length = getVal('length-preference');
     const analogy = getVal('analogy-preference');
-    const difficulty = getVal('difficulty-preference');
-    const character = getVal('character-preference');
-    const interaction = getVal('interaction-preference');
     const strictness = getVal('strictness-preference');
-    const hint = getVal('hint-preference');
     const energy = getVal('energy-preference');
+    const interaction = getVal('interaction-preference');
+    const hint = getVal('hint-preference');
 
-    // 1. 口調・語り口
-    let toneGuide = tone >= 66
-        ? "親しみやすいタメ口（〜だよ、〜ね、〜してみよう）で、距離の近い親切な話し方をすること。"
-        : (tone <= 35
-            ? "丁寧で礼儀正しい敬語（〜です、〜ですね、〜してみましょう）で誠実に話すこと。"
-            : "親切で自然な標準的言葉遣い（〜ですね、〜してみよう）で話すこと。");
+    // 1. 口調・語り口（明確に区別）
+    let toneInstruction = "";
+    if (tone >= 55) {
+        toneInstruction = "【超重要・口調ルール】：敬語（です・ます・でございます）は一切禁止です。100%徹底したフレンドリーなタメ口（〜だよ！、〜だね！、これ見て！、〜してみよう！）で、親友のように話してください。";
+    } else if (tone <= 45) {
+        toneInstruction = "【超重要・口調ルール】：砕けたタメ口は一切禁止です。極めて丁寧で礼儀正しい敬語・謙譲語（〜でございます、〜いたします、〜ですね、〜なさってください）で誠実に話してください。";
+    } else {
+        toneInstruction = "【口調ルール】：親切で自然な標準語（〜ですね、〜してみましょう）で話してください。";
+    }
 
     // 2. 褒め方
-    let praiseGuide = praise >= 66
-        ? "生徒の着眼点や努力を熱心に認め、ポジティブに背中を押すこと。"
-        : (praise <= 35
-            ? "落ち着いたトーンで穏やかに生徒の解答や努力を認めること。"
-            : "自然に褒めて励ますこと。");
+    let praiseInstruction = "";
+    if (praise >= 55) {
+        praiseInstruction = "【褒め方】：生徒のノートや着眼点、取り組みを「うわ、これすごい！」「完璧な発想！」「最高だよ！」と熱烈に大絶賛して生徒のモチベーションを最高に高めてください。";
+    } else if (praise <= 45) {
+        praiseInstruction = "【褒め方】：感情的なお世辞や大げさな褒め言葉は避け、「正解です」「論理的に合致しています」と客観的な事実のみを冷静に伝えてください。";
+    } else {
+        praiseInstruction = "【褒め方】：良いポイントを自然に褒めて励ましてください。";
+    }
 
-    // 3. 解説の長さ
-    let lengthGuide = length >= 70
-        ? "【手厚くじっくり】：背景の理由や思考のステップ、関連する重要事項まで含めて、1歩ずつ段階を踏んで手厚く丁寧に解説すること。"
-        : (length <= 30
-            ? "【要点集中・簡潔】：前置きを省略し、核心となる公式・解法のポイントを箇条書き等を活用して短く明快にまとめること。"
-            : "長すぎず短すぎず、要点が自然に頭に入るバランスの良いボリュームで解説すること。");
+    // 3. 熱量・テンション
+    let energyInstruction = "";
+    if (energy >= 55) {
+        energyInstruction = "【熱量・テンション】：絵文字「🔥」「💪」「✨」「🎯」をふんだんに使い、「よっしゃ！」「一緒に絶対マスターしようぜ！🔥」と熱血スポーツコーチのように情熱全開で指導してください。";
+    } else if (energy <= 45) {
+        energyInstruction = "【熱量・テンション】：絵文字や感嘆符（！）は極力抑え、落ち着いた知的な大人の雰囲気で、冷静かつスマートに指導してください。";
+    } else {
+        energyInstruction = "【熱量・テンション】：明るく前向きなトーンで指導してください。";
+    }
 
-    // 4. 例え話
-    let analogyGuide = analogy >= 66
-        ? "直感的にイメージしやすい身近な例え（日常の出来事など）を自然に交えて解説すること。"
-        : (analogy <= 35
-            ? "例え話は避け、論理的で厳密な言葉でシンプルに解説すること。"
-            : "必要に応じて分かりやすい例えを交えること。");
+    // 4. 指導の厳しさ
+    let strictnessInstruction = "";
+    if (strictness >= 55) {
+        strictnessInstruction = "【指導の厳しさ】：生徒が間違えやすいポイントや符号ミス、定義の曖昧さを「ここ、油断すると絶対に符号を間違えるよ！」「甘い理解は命取り！」とビシッと厳格に指摘し、確実に修正させてください。";
+    } else if (strictness <= 45) {
+        strictnessInstruction = "【指導の厳しさ】：超甘口・全肯定スタイルです。どんなミスや曖昧さも「挑戦しただけで100点満点！」「できなくても全然大丈夫だよ！」と温かく包み込んで安心感を与えてください。";
+    } else {
+        strictnessInstruction = "【指導の厳しさ】：優しく励ましつつ、改善ポイントを的確に伝えてください。";
+    }
 
-    // 5. キャラクター性
-    let characterGuide = character >= 66
-        ? "生徒と同じ目線で一緒に考え、悩みを共有する親身な相棒・サポーターとして接すること。"
-        : (character <= 35
-            ? "知的で頼もしく、体系的に導いてくれる優しい先生・メンターとして接すること。"
-            : "親切で信頼できる学習パートナーとして接すること。");
+    // 5. 解説の長さ・構成
+    let lengthInstruction = "";
+    if (length >= 55) {
+        lengthInstruction = "【解説ボリューム】：【超詳細・段階的ステップ解説】背景にある理屈、途中式の全ステップ、別解や裏ワザまで余すところなく手厚く詳しく解説してください。";
+    } else if (length <= 45) {
+        lengthInstruction = "【解説ボリューム】：【超簡潔・要点箇条書き】前置きや雑談は一切削り、核心となる解法公式と重要ポイントを箇条書きでコンパクトにまとめてください。";
+    } else {
+        lengthInstruction = "【解説ボリューム】：バランスの良い標準的な分量でわかりやすく解説してください。";
+    }
 
-    // 6. 指導の厳しさ
-    let strictnessGuide = strictness >= 66
-        ? "誤答や見落としやすいポイントを的確に指摘し、どこでつまずいたかを明確に指導すること。"
-        : (strictness <= 35
-            ? "全肯定スタイルで生徒の挑戦を温かく包み込み、安心感を与えること。"
-            : "優しく励ましながら、改善すべきポイントを的確に伝えること。");
+    // 6. 例え話
+    let analogyInstruction = "";
+    if (analogy >= 55) {
+        analogyInstruction = "【例え話】：ピザの切り分け、ゲームのレベルアップ、日常の買い物など、身近で直感的にイメージできる例え話を積極的に交えて解説してください。";
+    } else if (analogy <= 45) {
+        analogyInstruction = "【例え話】：日常の例え話は避け、数学的・科学的な定義と定理・論理でストレートに解説してください。";
+    } else {
+        analogyInstruction = "【例え話】：必要に応じてわかりやすい例えを交えてください。";
+    }
 
-    // 7. 熱量
-    let energyGuide = energy >= 66
-        ? "前向きで活力に満ちたトーンで生徒のやる気を引き出すこと。"
-        : (energy <= 35
-            ? "知的で落ち着いたクールな雰囲気で、冷静かつスマートに教えること。"
-            : "明るく穏やかなトーンで教えること。");
-
-    // 8. 問いかけ
-    let interactionGuide = interaction >= 66
-        ? "解説の最後には『この部分はなぜこうなると思う？』など理解を深める問いかけを1つ投げかけること。"
-        : "解説の最後には『ここまでで分からない所や他に質問はあるかな？』と優しく質問を促すこと。";
-
-    // 9. ヒントの出し方
-    let hintGuide = hint >= 66
-        ? "すぐに答えを全部言わず、生徒自身が気づけるような着眼点のヒントを提示すること。"
-        : "迷わせずダイレクトに正解までの明快な手順を直球提示すること。";
-
-    // 10. 難易度
-    let difficultyGuide = difficulty >= 66
-        ? "基礎に加えて、一歩進んだ発展的な視点や応用テクニックも紹介すること。"
-        : "専門用語をかみ砕き、基礎の基礎から直感的に教えること。";
-
-    let otherPrefsGuide = otherPrefs
-        ? `生徒の興味・関心分野: 『${otherPrefs}』\n※超重要注意: 生徒の興味や趣味（例: 『${otherPrefs}』）を、毎回の挨拶や無関係な文脈に無理やり挿入したり、機械的に口走ることは絶対に禁止です。学習内容の本質的な理解に真に役立つ自然なアナロジーがある場合にのみ、さりげなく活用してください。`
+    // 7. 特記事項
+    let otherPrefsInstruction = otherPrefs
+        ? `\n【🌟 ユーザーの個別要望・こだわり（最優先で反映）】：\n生徒からの特別リクエスト: 『${otherPrefs}』\nこの要望を解説の語り口やキャラクター性、例え話に【はっきりと目に見える形で積極的に反映】してください。`
         : "";
 
     return `
-【指導方針とペルソナ（自然な会話のための絶対ルール）】
-1. 🚫 【設定のメタ言及・棒読みの絶対禁止】：
-   - 「設定に従って」「あなたの好みに合わせて」「熱血モードで」といった設定自体への言及や、設定項目の丸暗記のような発言は一切禁止です。あなた自身の生来の性格・スタイルとして完全に自然体で振る舞ってください。
-2. 🚫 【決まり文句の機械的繰り返しの禁止（脱テンプレート）】：
-   - 毎回の挨拶や文頭に、同じ定型フレーズや紋切型のセリフを繰り返すのは厳禁です。提示されたノート・プリント・質問の「具体的な問題文・数値・数式・図表」にダイレクトに入り込み、その内容に応じた独自の生きた解説を行ってください。
-3. 🎯 【指導スタイルの自然な体現】：
-   ・言葉遣い: ${toneGuide}
-   ・褒め方: ${praiseGuide}
-   ・解説ボリューム: ${lengthGuide}
-   ・例え話: ${analogyGuide}
-   ・接し方: ${characterGuide}
-   ・指導の厳しさ: ${strictnessGuide}
-   ・熱量: ${energyGuide}
-   ・最後の問いかけ: ${interactionGuide}
-   ・ヒントの出し方: ${hintGuide}
-   ・難易度: ${difficultyGuide}
-   ${otherPrefsGuide}
-
-【数式とテキストの美しさ・視認性ルール（超重要）】
-1. 数式・変数・幾何記号（直線 $l, m$、座標 $(x, y)$、三角形 $\\triangle ABC$、方程式 $y = ax + b$、分数 $\\frac{1}{2}$、面積 $S = \\frac{1}{2}bh$ など）は、必ず LaTeX 形式（インラインは \`$数式$\`、独立数式は \`$$数式$$\`）で表記してください。
-2. 見出し（## や ###）、ステップ分け（【STEP 1】、【STEP 2】など）、箇条書き（- ）、重要な公式・結論の太字（**...**）を効果的に使い、スマホでも一瞬で要点が把握できるように美しく構造化してください。
+【AIペルソナ・指導スタイル設定（設定された個性をはっきりと体現してください）】
+${toneInstruction}
+${praiseInstruction}
+${energyInstruction}
+${strictnessInstruction}
+${lengthInstruction}
+${analogyInstruction}
+${otherPrefsInstruction}
 `.trim();
 }
 
@@ -1738,6 +1770,27 @@ function extractTopicFallback(text) {
 // ==========================================
 // ⚙️ 設定画面の保存・読込ロジック
 // ==========================================
+function renderAIPersonaBanners() {
+    const tags = getActiveAIPersonaTags();
+    const aiBanner = document.getElementById('ai-active-persona-tags');
+    const historyBanner = document.getElementById('history-active-persona-tags');
+
+    const html = tags.length > 0
+        ? `<span>スタイル:</span> ${tags.map(t => `<span class="persona-tag">${t}</span>`).join('')}`
+        : '';
+
+    if (aiBanner) {
+        aiBanner.innerHTML = html;
+        if (tags.length > 0) aiBanner.classList.remove('hidden');
+        else aiBanner.classList.add('hidden');
+    }
+    if (historyBanner) {
+        historyBanner.innerHTML = html;
+        if (tags.length > 0) historyBanner.classList.remove('hidden');
+        else historyBanner.classList.add('hidden');
+    }
+}
+
 function saveSettings() {
     for (const [id, key] of Object.entries(allSettingSliders)) {
         const slider = document.getElementById(id);
@@ -1762,6 +1815,9 @@ function saveSettings() {
         localStorage.setItem('gemini-model', modelSelect.value);
     }
     
+    // バナーの再描画
+    renderAIPersonaBanners();
+
     // 保存完了メッセージの表示演出
     const statusEl = document.getElementById('settings-save-status');
     if (statusEl) {
@@ -1773,6 +1829,7 @@ function saveSettings() {
         if (statusEl) {
             statusEl.style.opacity = '0';
         }
+        showToastNotification('⚙️ AIの指導スタイル設定を保存・適用しました！');
         switchScreen('home');
     }, 600);
 }
@@ -1802,6 +1859,9 @@ function loadSettings() {
     if (modelSelect) {
         modelSelect.value = localStorage.getItem('gemini-model') || 'gemini-2.5-flash';
     }
+
+    // バナーの初期描画
+    renderAIPersonaBanners();
 }
 
 // ==========================================
@@ -2824,29 +2884,29 @@ function generateFallbackWakaruAdvice(totalScore) {
     const strictness = parseInt(localStorage.getItem('strictness-preference') || '50', 10);
     const energy = parseInt(localStorage.getItem('energy-preference') || '50', 10);
 
-    const isCasual = tone >= 66;
-    const isHonest = tone <= 35;
-    const isPraise = praise >= 66;
-    const isStrict = strictness >= 66;
-    const isEnergy = energy >= 66;
+    const isCasual = tone >= 55;
+    const isHonest = tone <= 45;
+    const isPraise = praise >= 55;
+    const isStrict = strictness >= 55;
+    const isEnergy = energy >= 55;
 
     let text = "";
 
-    if (isCasual && isEnergy) {
-        text += `練習問題お疲れさま！得点は **${totalScore}点** だよ！🔥\n`;
+    if (isCasual) {
+        text += `練習問題お疲れさま！得点は **${totalScore}点** だよ！${isEnergy ? '🔥💪' : '✨'}\n`;
         if (totalScore === 100) {
-            text += `全問正解！！すごすぎるぜ！ノートの成果が完璧に出てるね！🎉✨\nこの勢いで次の単元もバリバリ突き進もう！`;
+            text += `${isPraise ? '全問正解！！すごすぎるぜ！完璧な理解度だね！🎉✨' : '全問正解！ノートの解き方がしっかり身についてるよ。'}\nこの調子でガンガン進もう！`;
         } else if (totalScore >= 60) {
-            text += `よく頑張ったね！高得点ゲットだよ！💪\n間違えた問題の解説をしっかりチェックして、次回は満点を狙っちゃおう！`;
+            text += `${isPraise ? 'よく頑張ったね！ナイスファイト！👏' : '合格点クリアだよ。'}\n${isStrict ? 'でも間違えたところは絶対に放置しちゃダメだよ！解説をチェックして復習しておこう！' : '間違えた問題の解説をチェックして、次回は満点を狙っちゃおう！'}`;
         } else {
-            text += `最後まであきらめずに解ききって燃えたぜ！🔥\n${isStrict ? '悔しい結果だけど甘えは禁物！間違えたところをノートで見直して絶対リベンジしよう！' : '落ち込まなくて大丈夫！間違えた分だけ伸びしろがあるからね！一緒に復習しよう！'}`;
+            text += `${isEnergy ? '最後まであきらめずに解ききって燃えたぜ！🔥' : '最後まで挑戦してえらい！'}\n${isStrict ? '悔しい結果だけど甘えは禁物！間違えたところをノートで見直して絶対リベンジしよう！' : '落ち込まなくて大丈夫！間違えた分だけ伸びしろがあるからね！一緒に復習しよう！'}`;
         }
     } else if (isHonest) {
         text += `練習問題5問のお取り組み、誠にお疲れ様でございました。得点は **${totalScore}点** でございます。\n`;
         if (totalScore >= 80) {
-            text += `大変素晴らしい成果でございます。学習内容がしっかりと定着されておりますね。次回もこの調子で励んでまいりましょう。`;
+            text += `${isPraise ? '大変素晴らしい成果でございます！完璧な定着度でございますね。🎉' : '学習内容がしっかりと定着されております。'}\n次回もこの調子で励んでまいりましょう。`;
         } else {
-            text += `全力を尽くされた姿勢が大変立派でございます。解説をご確認いただき、次回へ向けて復習なさってくださいませ。`;
+            text += `全力を尽くされた姿勢が大変立派でございます。\n${isStrict ? '不正解となった項目は重要な復習ポイントでございます。解説を熟読の上、確実な定着を図りましょう。' : '解説をご確認いただき、次回へ向けて復習なさってくださいませ。'}`;
         }
     } else {
         text += `練習問題お疲れ様でした！今回の得点は **${totalScore}点** です。🤖\n`;

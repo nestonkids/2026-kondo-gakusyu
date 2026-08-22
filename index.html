@@ -275,7 +275,10 @@
                     <div class="right-teaching-panel">
                         <!-- チャット欄 -->
                         <div class="ai-chat-section">
-                            <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 AIの解説授業（対話モード）</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 AIの解説授業（対話モード）</h4>
+                                <div id="ai-active-persona-tags" class="ai-persona-banner" style="margin: 0; width: auto;"></div>
+                            </div>
                             
                             <div id="ai-chat-log" class="teaching-chat-log">
                                 <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
@@ -373,7 +376,10 @@
                     <!-- 右側：会話履歴エリア -->
                     <div class="right-teaching-panel">
                         <div class="ai-chat-section">
-                            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 授業中の会話ログ</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 授業中の会話ログ</h4>
+                                <div id="history-active-persona-tags" class="ai-persona-banner" style="margin: 0; width: auto;"></div>
+                            </div>
                             <div id="history-chat-log" class="teaching-chat-log">
                                 <!-- チャット履歴が動的に表示されます -->
                             </div>

@@ -752,6 +752,31 @@ body {
 /* ==========================================
    ✨ AI授業解説・チャット画面のスタイル
 ========================================== */
+.ai-persona-banner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    color: #64748b;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.persona-tag {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
 .teaching-card-container {
     padding: 24px 28px;
     justify-content: flex-start;
