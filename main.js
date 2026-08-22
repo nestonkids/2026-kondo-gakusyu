@@ -654,10 +654,20 @@ function startReviewProcess() {
     
     const imagePreview = document.getElementById('image-preview');
     const teachingPreview = document.getElementById('teaching-image-preview');
+    const aiTopBanner = document.getElementById('ai-top-image-banner');
     
-    // プレビュー画像を解説画面に引き継ぐ
-    if (imagePreview && teachingPreview) {
-        teachingPreview.src = imagePreview.src;
+    // プレビュー画像を解説画面の一番上に引き継ぐ
+    if (imagePreview && imagePreview.src && imagePreview.src.startsWith('data:')) {
+        if (teachingPreview) teachingPreview.src = imagePreview.src;
+        if (aiTopBanner) {
+            aiTopBanner.classList.remove('hidden');
+            aiTopBanner.style.display = 'flex';
+        }
+    } else {
+        if (aiTopBanner) {
+            aiTopBanner.classList.add('hidden');
+            aiTopBanner.style.display = 'none';
+        }
     }
     
     // フォームのリセット
@@ -1279,6 +1289,12 @@ function startTest() {
     const scoreDisplay = document.getElementById('test-score-display');
     if (scoreDisplay) scoreDisplay.classList.add('hidden');
 
+    const testStatsBox = document.getElementById('test-stats-box');
+    if (testStatsBox) {
+        testStatsBox.classList.add('hidden');
+        testStatsBox.style.display = 'none';
+    }
+
     const gradeBtn = document.getElementById('grade-test-btn');
     if (gradeBtn) gradeBtn.classList.remove('hidden');
 
@@ -1394,6 +1410,9 @@ function gradeTest() {
     if (finishBtn) finishBtn.classList.remove('hidden');
     const abortBtn = document.getElementById('test-abort-btn');
     if (abortBtn) abortBtn.classList.add('hidden');
+
+    // 📊 実力テスト採点時も統計データを表示！
+    renderLearningStats(score, '総合', 'test-stats-box');
 }
 
 function finishTestSessionAndSave() {
@@ -1432,6 +1451,13 @@ function finishTestSessionAndSave() {
     });
 
     saveHistory();
+
+    const testStatsBox = document.getElementById('test-stats-box');
+    if (testStatsBox) {
+        testStatsBox.classList.add('hidden');
+        testStatsBox.style.display = 'none';
+    }
+
     renderHistory();
     switchScreen('home');
     showToastNotification(`✅ 学習記録「${testTitle}」を保存しました！`);
@@ -3003,12 +3029,12 @@ async function gradePracticeTest() {
     if (gradeBtn) gradeBtn.classList.add('hidden');
     if (finishBtn) finishBtn.classList.remove('hidden');
 
-    // 🤖 わかるくんからのアドバイスを生成・表示
-    await generateWakaruAdvice(totalScore, resultsSummary);
-
-    // 📊 これまでの学習統計＆成長データの算出とレンダリング
+    // 📊 これまでの学習統計＆成長データの算出と即時レンダリング
     const currentSubject = (currentSessionTopic && currentSessionTopic.subject) ? currentSessionTopic.subject : '数学';
-    renderLearningStats(totalScore, currentSubject);
+    renderLearningStats(totalScore, currentSubject, 'practice-stats-box');
+
+    // 🤖 わかるくんからのアドバイスを非同期で生成・表示
+    generateWakaruAdvice(totalScore, resultsSummary);
 }
 
 /**
@@ -3225,115 +3251,154 @@ function calculateLearningStats(currentScore, currentSubject = '数学') {
 /**
  * 統計データUIをDOMに描画
  */
-function renderLearningStats(currentScore, currentSubject = '数学') {
+function renderLearningStats(currentScore, currentSubject = '数学', containerId = 'practice-stats-box') {
     const stats = calculateLearningStats(currentScore, currentSubject);
-    const statsBox = document.getElementById('practice-stats-box');
+    const statsBox = document.getElementById(containerId);
     if (!statsBox) return;
 
-    // 1. 各メトリクス値の反映
-    const curScoreEl = document.getElementById('stats-current-score');
-    if (curScoreEl) curScoreEl.textContent = stats.currentScore;
+    let badgeText = '📈 スコア急上昇中！';
+    let badgeColor = '#059669';
+    let badgeBg = '#ecfdf5';
 
-    const curAccEl = document.getElementById('stats-current-accuracy');
-    if (curAccEl) curAccEl.textContent = `正答率: ${stats.currentScore}% (${Math.round(stats.currentScore / 20)}/5問)`;
-
-    const avgScoreEl = document.getElementById('stats-avg-score');
-    if (avgScoreEl) avgScoreEl.textContent = stats.avgScore;
-
-    const totalTestsEl = document.getElementById('stats-total-tests');
-    if (totalTestsEl) totalTestsEl.textContent = `累計 ${stats.totalTests} 回実施`;
-
-    const diffScoreEl = document.getElementById('stats-diff-score');
-    if (diffScoreEl) {
-        diffScoreEl.textContent = `${stats.diffScore >= 0 ? '+' : ''}${stats.diffScore}`;
-        diffScoreEl.className = stats.diffScore >= 0 ? 'metric-val positive' : 'metric-val';
+    if (stats.diffScore > 0) {
+        badgeText = '📈 スコア急上昇中！';
+        badgeColor = '#059669';
+        badgeBg = '#ecfdf5';
+    } else if (stats.currentScore >= 90) {
+        badgeText = '🔥 連続ハイスコア達成！';
+        badgeColor = '#7c3aed';
+        badgeBg = '#f5f3ff';
+    } else if (stats.totalTests === 1) {
+        badgeText = '✨ 初演習おめでとう！';
+        badgeColor = '#2563eb';
+        badgeBg = '#eff6ff';
+    } else {
+        badgeText = '💪 着実に復習継続中！';
+        badgeColor = '#0284c7';
+        badgeBg = '#f0f9ff';
     }
 
-    const diffTextEl = document.getElementById('stats-diff-text');
-    if (diffTextEl) diffTextEl.textContent = stats.diffText;
+    // 直近スコア推移バーチャート生成
+    let barsHtml = '';
+    stats.recentScores.forEach((item, idx) => {
+        const isCurrent = (idx === stats.recentScores.length - 1);
+        const label = isCurrent ? '今回' : (item.date ? item.date.slice(5) : `${idx + 1}回目`);
+        const heightPercent = Math.max(14, item.score);
+        barsHtml += `
+            <div class="score-bar-column">
+                <span class="score-bar-value">${item.score}点</span>
+                <div class="score-bar-pillar ${isCurrent ? 'current' : ''}" style="height: ${heightPercent}%;" title="${item.subject || ''} ${item.score}点"></div>
+                <span class="score-bar-label">${label}</span>
+            </div>
+        `;
+    });
 
-    const maxScoreEl = document.getElementById('stats-max-score');
-    if (maxScoreEl) maxScoreEl.textContent = stats.maxScore;
+    // 教科別プログレスバー生成
+    let masteryHtml = '';
+    const subjectIcons = {
+        '数学': '📐',
+        '英語': '🔤',
+        '理科': '🧪',
+        '社会': '🏛️',
+        '国語': '📖',
+        '総合': '📚'
+    };
 
-    const accRateEl = document.getElementById('stats-accuracy-rate');
-    if (accRateEl) accRateEl.textContent = `通算正答率: ${stats.avgScore}%`;
-
-    // 2. トレンドバッジの判定
-    const trendBadge = document.getElementById('practice-stats-trend-badge');
-    if (trendBadge) {
-        if (stats.diffScore > 0) {
-            trendBadge.textContent = '📈 スコア急上昇中！';
-            trendBadge.style.color = '#059669';
-        } else if (stats.currentScore >= 90) {
-            trendBadge.textContent = '🔥 連続ハイスコア達成！';
-            trendBadge.style.color = '#7c3aed';
-        } else if (stats.totalTests === 1) {
-            trendBadge.textContent = '✨ 初演習おめでとう！';
-            trendBadge.style.color = '#2563eb';
-        } else {
-            trendBadge.textContent = '💪 着実に復習継続中！';
-            trendBadge.style.color = '#0284c7';
-        }
+    const subjects = Object.keys(stats.subjectStats);
+    if (subjects.length === 0) {
+        subjects.push(currentSubject);
+        stats.subjectStats[currentSubject] = { count: 1, totalScore: stats.currentScore };
     }
 
-    // 3. 直近スコア推移棒グラフの生成
-    const scoreBarsEl = document.getElementById('stats-score-bars');
-    if (scoreBarsEl) {
-        let barsHtml = '';
-        stats.recentScores.forEach((item, idx) => {
-            const isCurrent = (idx === stats.recentScores.length - 1);
-            const label = isCurrent ? '今回' : (item.date ? item.date.slice(5) : `${idx + 1}回目`);
-            const heightPercent = Math.max(12, item.score); // 最小高さ担保
-            barsHtml += `
-                <div class="score-bar-column">
-                    <span class="score-bar-value">${item.score}点</span>
-                    <div class="score-bar-pillar ${isCurrent ? 'current' : ''}" style="height: ${heightPercent}%;" title="${item.subject || ''} ${item.score}点"></div>
-                    <span class="score-bar-label">${label}</span>
+    subjects.forEach(subj => {
+        const sData = stats.subjectStats[subj];
+        const sAvg = Math.round(sData.totalScore / sData.count);
+        const icon = subjectIcons[subj] || '📚';
+        masteryHtml += `
+            <div class="subject-mastery-item">
+                <div class="subject-mastery-header">
+                    <span>${icon} ${subj}</span>
+                    <span>平均 ${sAvg}点（${sData.count}回実施）</span>
                 </div>
-            `;
-        });
-        scoreBarsEl.innerHTML = barsHtml;
-    }
-
-    // 4. 教科別習熟度プログレスバーの生成
-    const masteryListEl = document.getElementById('stats-subject-mastery');
-    if (masteryListEl) {
-        let masteryHtml = '';
-        const subjectIcons = {
-            '数学': '📐',
-            '英語': '🔤',
-            '理科': '🧪',
-            '社会': '🏛️',
-            '国語': '📖',
-            '総合': '📚'
-        };
-
-        const subjects = Object.keys(stats.subjectStats);
-        if (subjects.length === 0) {
-            subjects.push(currentSubject);
-            stats.subjectStats[currentSubject] = { count: 1, totalScore: stats.currentScore };
-        }
-
-        subjects.forEach(subj => {
-            const sData = stats.subjectStats[subj];
-            const sAvg = Math.round(sData.totalScore / sData.count);
-            const icon = subjectIcons[subj] || '📚';
-            masteryHtml += `
-                <div class="subject-mastery-item">
-                    <div class="subject-mastery-header">
-                        <span>${icon} ${subj}</span>
-                        <span>平均 ${sAvg}点（${sData.count}回実施）</span>
-                    </div>
-                    <div class="mastery-progress-track">
-                        <div class="mastery-progress-fill" style="width: ${sAvg}%;"></div>
-                    </div>
+                <div class="mastery-progress-track">
+                    <div class="mastery-progress-fill" style="width: ${sAvg}%;"></div>
                 </div>
-            `;
-        });
-        masteryListEl.innerHTML = masteryHtml;
-    }
+            </div>
+        `;
+    });
 
-    // 5. 表示アニメーション
+    statsBox.innerHTML = `
+        <div class="stats-box-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.8rem;">📊</span>
+                <div>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #1e293b; margin: 0;">これまでの学習統計 ＆ 成長レポート</h3>
+                    <p style="font-size: 0.8rem; color: #64748b; margin: 0;">過去の記録・テストと比較したあなたの成果</p>
+                </div>
+            </div>
+            <span class="stats-trend-badge" style="color: ${badgeColor}; background: ${badgeBg}; border-color: ${badgeColor}33;">${badgeText}</span>
+        </div>
+
+        <!-- 4つのメイン指標カード -->
+        <div class="stats-metrics-grid">
+            <div class="metric-card">
+                <span class="metric-label">🎯 今回のスコア</span>
+                <div class="metric-value-row">
+                    <span class="metric-val primary">${stats.currentScore}</span>
+                    <span class="metric-sub">/ 100点</span>
+                </div>
+                <span class="metric-subtext">正答率: ${stats.currentScore}% (${Math.round(stats.currentScore / 20)}/5問)</span>
+            </div>
+
+            <div class="metric-card">
+                <span class="metric-label">📈 通算平均スコア</span>
+                <div class="metric-value-row">
+                    <span class="metric-val">${stats.avgScore}</span>
+                    <span class="metric-sub">点</span>
+                </div>
+                <span class="metric-subtext">累計 ${stats.totalTests} 回実施</span>
+            </div>
+
+            <div class="metric-card">
+                <span class="metric-label">🔥 前回との比較</span>
+                <div class="metric-value-row">
+                    <span class="metric-val ${stats.diffScore >= 0 ? 'positive' : ''}">${stats.diffScore >= 0 ? '+' : ''}${stats.diffScore}</span>
+                    <span class="metric-sub">点</span>
+                </div>
+                <span class="metric-subtext">${stats.diffText}</span>
+            </div>
+
+            <div class="metric-card">
+                <span class="metric-label">🏆 過去最高スコア</span>
+                <div class="metric-value-row">
+                    <span class="metric-val text-gold">${stats.maxScore}</span>
+                    <span class="metric-sub">点</span>
+                </div>
+                <span class="metric-subtext">通算正答率: ${stats.avgScore}%</span>
+            </div>
+        </div>
+
+        <!-- スコア推移グラフ & 教科別分布 -->
+        <div class="stats-visual-row">
+            <!-- 最近のスコア推移バーチャート -->
+            <div class="stats-chart-card">
+                <h4 class="chart-card-title">📈 最近のスコア推移（直近5回）</h4>
+                <div class="score-bars-container">
+                    ${barsHtml}
+                </div>
+            </div>
+
+            <!-- 教科別の習熟度・実施回数 -->
+            <div class="stats-chart-card">
+                <h4 class="chart-card-title">📚 教科別の習熟度・演習回数</h4>
+                <div class="subject-mastery-list">
+                    ${masteryHtml}
+                </div>
+            </div>
+        </div>
+    `;
+
     statsBox.classList.remove('hidden');
+    statsBox.style.display = 'flex';
 }
 

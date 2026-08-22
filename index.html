@@ -228,6 +228,9 @@
                         <!-- 動的にテスト問題が生成・表示されます -->
                     </div>
 
+                    <!-- 📊 実力テスト統計データボックス (採点後に表示) -->
+                    <div id="test-stats-box" class="hidden practice-stats-container"></div>
+
                     <!-- アクションエリア -->
                     <div class="test-actions" style="display: flex; gap: 15px; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15);">
                         <button class="back-button" id="test-abort-btn" onclick="switchScreen('test')" style="margin: 0;">🏠 戻る</button>
@@ -359,76 +362,7 @@
                     </div>
 
                     <!-- 📊 これまでの学習統計＆成長アナリティクス (採点後に表示) -->
-                    <div id="practice-stats-box" class="hidden practice-stats-container">
-                        <div class="stats-box-header">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 1.8rem;">📊</span>
-                                <div>
-                                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #1e293b; margin: 0;">これまでの学習統計 ＆ 成長レポート</h3>
-                                    <p style="font-size: 0.8rem; color: #64748b; margin: 0;">過去の記録・テストと比較したあなたの成果</p>
-                                </div>
-                            </div>
-                            <span class="stats-trend-badge" id="practice-stats-trend-badge">📈 スコア上昇中！</span>
-                        </div>
-
-                        <!-- 4つのメイン指標カード -->
-                        <div class="stats-metrics-grid">
-                            <div class="metric-card">
-                                <span class="metric-label">🎯 今回のスコア</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-val primary" id="stats-current-score">0</span>
-                                    <span class="metric-sub">/ 100点</span>
-                                </div>
-                                <span class="metric-subtext" id="stats-current-accuracy">正答率: 0%</span>
-                            </div>
-
-                            <div class="metric-card">
-                                <span class="metric-label">📈 通算平均スコア</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-val" id="stats-avg-score">0</span>
-                                    <span class="metric-sub">点</span>
-                                </div>
-                                <span class="metric-subtext" id="stats-total-tests">累計 0 回実施</span>
-                            </div>
-
-                            <div class="metric-card">
-                                <span class="metric-label">🔥 前回との比較</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-val positive" id="stats-diff-score">+0</span>
-                                    <span class="metric-sub">点</span>
-                                </div>
-                                <span class="metric-subtext" id="stats-diff-text">前回より成長！</span>
-                            </div>
-
-                            <div class="metric-card">
-                                <span class="metric-label">🏆 過去最高スコア</span>
-                                <div class="metric-value-row">
-                                    <span class="metric-val text-gold" id="stats-max-score">0</span>
-                                    <span class="metric-sub">点</span>
-                                </div>
-                                <span class="metric-subtext" id="stats-accuracy-rate">通算正答率: 0%</span>
-                            </div>
-                        </div>
-
-                        <!-- スコア推移グラフ & 教科別分布 -->
-                        <div class="stats-visual-row">
-                            <!-- 最近のスコア推移バーチャート -->
-                            <div class="stats-chart-card">
-                                <h4 class="chart-card-title">📈 最近のスコア推移（直近5回）</h4>
-                                <div class="score-bars-container" id="stats-score-bars">
-                                    <!-- 動的にバーを描画 -->
-                                </div>
-                            </div>
-
-                            <!-- 教科別の習熟度・実施回数 -->
-                            <div class="stats-chart-card">
-                                <h4 class="chart-card-title">📚 教科別の習熟度・演習回数</h4>
-                                <div class="subject-mastery-list" id="stats-subject-mastery">
-                                    <!-- 動的にプログレスバーを描画 -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="practice-stats-box" class="hidden practice-stats-container"></div>
 
                     <!-- アクションエリア -->
                     <div class="test-actions" style="display: flex; gap: 15px; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15);">
