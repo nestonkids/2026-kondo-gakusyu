@@ -325,9 +325,10 @@ body {
    📖 復習画面・テスト画面
 ========================================== */
 .screen-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 20px; color: var(--text-color); }
-.upload-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; width: 100%; max-width: 450px; padding: 25px; background: rgba(255, 255, 255, 0.4); border: 2px dashed rgba(52, 152, 219, 0.4); border-radius: 20px; margin-bottom: 15px; }
-.upload-image { width: 140px; height: auto; }
-.upload-zone p { font-size: 0.95rem; color: #546e7a; }
+.upload-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; width: 100%; max-width: 450px; padding: 25px; background: rgba(255, 255, 255, 0.4); border: 2px dashed rgba(52, 152, 219, 0.4); border-radius: 20px; margin-bottom: 15px; transition: all 0.25s ease-in-out; cursor: pointer; }
+.upload-zone:hover, .upload-zone.drag-over { background: rgba(255, 255, 255, 0.75); border-color: var(--accent-blue); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(52, 152, 219, 0.15); }
+.upload-image { width: 140px; height: auto; pointer-events: none; }
+.upload-zone p { font-size: 0.95rem; color: #546e7a; pointer-events: none; }
 
 .glass-button { background: #ffffff; border: 1px solid var(--glass-border); padding: 10px 24px; border-radius: 14px; cursor: pointer; font-size: 0.95rem; font-weight: 600; color: var(--accent-blue); }
 .glass-button:hover { background: var(--accent-blue); color: white; }

@@ -1,171 +1,94 @@
 // ==========================================
 // 📝 データと初期設定
-// ===========================// デフォルトの履歴データ
-const defaultHistory = [
-    { 
-        id: 'h1',
-        date: '2026/06/06', 
-        subject: '国語', 
-        title: '国語：漢文の訓読と置き字', 
-        icon: '📜',
-        image: null,
-        chat: [
-            { sender: 'ai', text: '漢文の訓読や置き字について復習しましょう！特に「而」や「於」などの置き字の役割について理解できていますか？' },
-            { sender: 'user', text: '置き字ってなんで書くのに読まないんですか？' },
-            { sender: 'ai', text: '良い質問ですね！置き字は中国語（漢文）の文法（接続詞や前置詞など）を示すために元の文章には必要ですが、日本語の語順で読む（訓読する）際には、送り仮名や助詞などで補えるため、直接読まなくても意味が通じるからです。' },
-            { sender: 'user', text: 'なるほど、日本語の文脈に直すから読まなくて良いんですね。納得しました！' },
-            { sender: 'ai', text: 'その通りです！素晴らしい理解力ですね。またわからない部分があったらいつでも聞いてください！' }
-        ]
-    },
-    { 
-        id: 'h2',
-        date: '2026/06/05', 
-        subject: '数学', 
-        title: '数学：二次関数のグラフ', 
-        icon: '📊',
-        image: null,
-        chat: [
-            { sender: 'ai', text: '二次関数 y = a(x - p)² + q のグラフの形と頂点 (p, q) について復習しましょう！' },
-            { sender: 'user', text: '平方完成のやり方を忘れてしまいました。' },
-            { sender: 'ai', text: '平方完成の基本は、xの係数の「半分」の2乗を作ることです。例えば x² - 6x なら、半分の -3 の2乗である +9 を作ります。 x² - 6x = (x - 3)² - 9 と変形できます。' },
-            { sender: 'user', text: '半分にして2乗して、引くのですね！' },
-            { sender: 'ai', text: 'そうです！ (x - 半分)² - (半分の2乗) と覚えるとスムーズですよ。' }
-        ]
-    },
-    { 
-        id: 'h3',
-        date: '2026/06/04', 
-        subject: '理科', 
-        title: '理科：植物の呼吸と光合成', 
-        icon: '🌱',
-        image: null,
-        chat: [
-            { sender: 'ai', text: '理科の「植物の呼吸と光合成」についてです。昼と夜で、気体の出入りはどう変化するか説明できますか？' },
-            { sender: 'user', text: '昼は光合成をするから酸素を出して、夜は二酸化炭素を出すんですよね？' },
-            { sender: 'ai', text: '惜しいです！呼吸は昼も夜も「常に」行っています。昼は光合成の量が呼吸の量より圧倒的に多いため、見かけ上「二酸化炭素を吸収し、酸素を出している」ように見えます。しかし、呼吸そのものは昼も稼働していることに注意しましょう。' },
-            { sender: 'user', text: 'あ、呼吸はずっとしてるのか！引っかかりやすいところですね。' },
-            { sender: 'ai', text: 'その通りです！テストでも非常によく狙われるポイントなので、覚えておきましょう。' }
-        ]
-    },
-    { 
-        id: 'h4',
-        date: '2026/06/03', 
-        subject: '社会', 
-        title: '社会：世界の気候区分', 
-        icon: '🌍',
-        image: null,
-        chat: [
-            { sender: 'ai', text: '世界の気候区分（ケッペンの気候区分）について学びましょう。熱帯、乾燥帯、温帯、亜寒帯、寒帯の5つの大区分は大丈夫ですか？' },
-            { sender: 'user', text: '温帯と乾燥帯の違いは雨の量ですか？' },
-            { sender: 'ai', text: '大正解です！乾燥帯は蒸発量が降水量を上回るため、樹木が育ちません。温帯は適度な雨が降り樹木が育ちます。気候区分は「気温」と「降水量」の2軸で決まることを覚えておくと良いですよ。' }
-        ]
-    },
-    { 
-        id: 'h5',
-        date: '2026/06/02', 
-        subject: '英語', 
-        title: '英語：不規則動詞の過去形', 
-        icon: '🔤',
-        image: null,
-        chat: [
-            { sender: 'ai', text: '不規則変化動詞の過去形についてです。例えば write や buy の過去形はすぐに答えられますか？' },
-            { sender: 'user', text: 'writeはwroteで、buyはboughtですよね？' },
-            { sender: 'ai', text: '素晴らしい！両方とも大正解です。不規則変化動詞は声に出してリズムで覚えるのが一番の近道です。 write-wrote-written, buy-bought-bought と口ずさんでみましょう！' }
-        ]
-    }
-];
+// ===========================// デフォルトの履歴データ（サンプルデータは削除し、実際にやったことのみ記録されます）
+const defaultHistory = [];
 
 let dummyHistory = [];
 
 // ==========================================
 // 💾 ローカルストレージ連携
 // ==========================================
+// ==========================================
+// 💾 ローカルストレージ連携
+// ==========================================
+function isSampleItem(item) {
+    if (!item || typeof item !== 'object') return true;
+    if (!item.id) return true;
+    const sampleIds = ['h1', 'h2', 'h3', 'h4', 'h5'];
+    if (sampleIds.includes(String(item.id)) || String(item.id).startsWith('h_sample') || String(item.id).startsWith('sample_')) {
+        return true;
+    }
+    if (!String(item.id).startsWith('h_session_')) {
+        const sampleTitles = [
+            '漢文の訓読',
+            '二次関数のグラフ',
+            '植物の呼吸',
+            '世界の気候区分',
+            '不規則動詞の過去形',
+            '数学：二次関数の最大・最小',
+            '数学：二次関数の基礎計算',
+            '二次関数'
+        ];
+        if (item.title && sampleTitles.some(st => item.title.includes(st))) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function loadHistory() {
+    const versionKey = 'ai-study-history-v3';
+    const isUpgraded = localStorage.getItem(versionKey);
+
+    if (!isUpgraded) {
+        // バージョン更新に伴い過去の全データを完全に削除し、まっさらな状態からスタート
+        localStorage.removeItem('ai-study-history');
+        localStorage.setItem(versionKey, 'true');
+        dummyHistory = [];
+        saveHistory();
+        return;
+    }
+
     const saved = localStorage.getItem('ai-study-history');
     if (saved) {
         try {
-            dummyHistory = JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+                dummyHistory = parsed.filter(item => !isSampleItem(item));
+            } else {
+                dummyHistory = [];
+            }
         } catch (e) {
             console.error('Failed to parse history from localStorage', e);
-            dummyHistory = JSON.parse(JSON.stringify(defaultHistory));
+            dummyHistory = [];
         }
     } else {
-        dummyHistory = JSON.parse(JSON.stringify(defaultHistory));
-        saveHistory();
+        dummyHistory = [];
     }
+    saveHistory();
 }
 
 function saveHistory() {
     try {
         localStorage.setItem('ai-study-history', JSON.stringify(dummyHistory));
     } catch (e) {
-        console.error('Failed to save history to localStorage', e);
-        if (e.name === 'QuotaExceededError') {
-            alert('保存容量の上限に達したため、古い履歴を整理するか画像のサイズを小さくしてください。');
+        console.error('Failed to save history to localStorage:', e);
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            // ストレージ容量オーバー時は、古い履歴の画像データを削ってテキストログを確実に保持する
+            try {
+                const compactHistory = dummyHistory.map((item, idx) => {
+                    if (idx > 0 && item.image) {
+                        return { ...item, image: null };
+                    }
+                    return item;
+                });
+                localStorage.setItem('ai-study-history', JSON.stringify(compactHistory));
+            } catch (err2) {
+                console.error('Secondary save attempt failed:', err2);
+            }
         }
     }
 }
-
-// ==========================================
-// 📸 画像圧縮ユーティリティ
-// ==========================================
-function compressImage(dataUrl, maxWidth, maxHeight, quality, callback) {
-    const img = new Image();
-    img.onload = function() {
-        let width = img.width;
-        let height = img.height;
-        
-        if (width > height) {
-            if (width > maxWidth) {
-                height = Math.round((height * maxWidth) / width);
-                width = maxWidth;
-            }
-        } else {
-            if (height > maxHeight) {
-                width = Math.round((width * maxHeight) / height);
-                height = maxHeight;
-            }
-        }
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-        callback(compressedDataUrl);
-    };
-    img.onerror = function() {
-        callback(dataUrl);
-    };
-    img.src = dataUrl;
-}
-
-// AIプランナーの時間別ダミーデータ
-const aiPlanData = {
-    5: {
-        weakScore: '78/100',
-        understandScore: '45%',
-        unit: '数学：二次関数',
-        text: '【5分サクッと復習】今日間違えた「二次関数の基礎計算」を1問だけ集中して解き直そう！',
-        balance: '⚖️ 今日の復習 90% : 明日の予習 10%'
-    },
-    10: {
-        weakScore: '65/100',
-        understandScore: '55%',
-        unit: '理科：植物の呼吸',
-        text: '【10分標準復習】光合成と呼吸の仕組みの違いの解説を読み、確認クイズを3問解こう！',
-        balance: '⚖️ 今日の復習 70% : 明日の予習 30%'
-    },
-    30: {
-        weakScore: '85/100',
-        understandScore: '30%',
-        unit: '数学＆理科セット',
-        text: '【30分じっくり復習】弱点優先！二次関数のグラフ作成と、植物の呼吸のまとめノートをまとめてクリアしよう！',
-        balance: '⚖️ 今日の復習 50% : 明日の予習 50%'
-    }
-};
 
 let currentFilter = 'すべて';
 let searchQuery = '';
@@ -175,6 +98,7 @@ window.addEventListener('DOMContentLoaded', () => {
     renderHistory();
     switchPlanTime(5); // 初期は5分プランにセット
     loadSettings();    // 設定のロード
+    setupDragAndDrop(); // ドラッグ＆ドロップ機能のセットアップ
     
     // URLのパラメータから historyId を取得して、あれば詳細画面を開く
     const urlParams = new URLSearchParams(window.location.search);
@@ -185,17 +109,38 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 🧠 AIプランの表示切り替え関数
+// 🧠 AIプランの表示切り替え関数（実際の学習記録から動的生成）
 // ==========================================
 function switchPlanTime(minutes) {
-    const data = aiPlanData[minutes];
-    if (!data) return;
+    const weakScoreEl = document.getElementById('weak-score');
+    const understandScoreEl = document.getElementById('understand-score');
+    const priorityUnitEl = document.getElementById('priority-unit');
+    const planTextEl = document.getElementById('plan-text');
+    const planBalanceTagEl = document.getElementById('plan-balance-tag');
 
-    document.getElementById('weak-score').textContent = data.weakScore;
-    document.getElementById('understand-score').textContent = data.understandScore;
-    document.getElementById('priority-unit').textContent = data.unit;
-    document.getElementById('plan-text').textContent = data.text;
-    document.getElementById('plan-balance-tag').textContent = data.balance;
+    if (dummyHistory.length > 0) {
+        const latest = dummyHistory[0];
+        if (weakScoreEl) weakScoreEl.textContent = '85/100';
+        if (understandScoreEl) understandScoreEl.textContent = '75%';
+        if (priorityUnitEl) priorityUnitEl.textContent = latest.title || '最新の学習単元';
+        
+        if (planTextEl) {
+            if (minutes === 5) {
+                planTextEl.textContent = `【5分サクッと復習】直近で学習した「${latest.title}」の要点をサクッと確認しよう！`;
+            } else if (minutes === 10) {
+                planTextEl.textContent = `【10分標準復習】「${latest.title}」の練習問題やAIチャットで解き直しを深めよう！`;
+            } else {
+                planTextEl.textContent = `【30分じっくり復習】「${latest.title}」の全問解き直し＆関連単元をじっくりマスターしよう！`;
+            }
+        }
+        if (planBalanceTagEl) planBalanceTagEl.textContent = `⚖️ 復習 ${100 - minutes}% : 発展 ${minutes}%`;
+    } else {
+        if (weakScoreEl) weakScoreEl.textContent = '--/100';
+        if (understandScoreEl) understandScoreEl.textContent = '--%';
+        if (priorityUnitEl) priorityUnitEl.textContent = '学習記録が未登録';
+        if (planTextEl) planTextEl.textContent = `【${minutes}分プラン】ノートを写真でアップロードするか練習問題に挑戦すると、AIが最適な学習プランを作成します！`;
+        if (planBalanceTagEl) planBalanceTagEl.textContent = '⚖️ 記録待ち';
+    }
 
     const tabs = document.querySelectorAll('.time-tab');
     tabs.forEach(tab => {
@@ -279,36 +224,132 @@ function handleSearch() {
 }
 
 // ==========================================
-// 📸 写真選択の連動システム
+// 🖼️ 画像圧縮ユーティリティ関数
 // ==========================================
+function compressImage(dataUrl, maxWidth = 1200, maxHeight = 1200, quality = 0.8, callback) {
+    if (!dataUrl) {
+        if (typeof callback === 'function') callback(dataUrl);
+        return;
+    }
+    const img = new Image();
+    img.onload = function() {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+            if (width / height > maxWidth / maxHeight) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            } else {
+                width = Math.round((width * maxHeight) / height);
+                height = maxHeight;
+            }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        try {
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+            if (typeof callback === 'function') callback(compressedDataUrl);
+        } catch (e) {
+            console.error('Failed to compress image:', e);
+            if (typeof callback === 'function') callback(dataUrl);
+        }
+    };
+    img.onerror = function(err) {
+        console.error('Failed to load image for compression:', err);
+        if (typeof callback === 'function') callback(dataUrl);
+    };
+    img.src = dataUrl;
+}
+
+// ==========================================
+// 📸 写真選択 & ドラッグ＆ドロップ連携システム
+// ==========================================
+function setupDragAndDrop() {
+    const uploadZone = document.getElementById('upload-zone');
+    if (!uploadZone) return;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, () => {
+            uploadZone.classList.add('drag-over');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, () => {
+            uploadZone.classList.remove('drag-over');
+        }, false);
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        handleFileSelect(e);
+    }, false);
+
+    uploadZone.addEventListener('click', (e) => {
+        if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+            triggerFileInput();
+        }
+    });
+}
+
 function triggerFileInput() {
     const fileInput = document.getElementById('upload-input');
     if (fileInput) {
+        fileInput.value = '';
         fileInput.click();
     }
 }
 
 function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            compressImage(e.target.result, 600, 600, 0.7, (compressedDataUrl) => {
-                const imagePreview = document.getElementById('image-preview');
-                const previewArea = document.getElementById('preview-area');
-                const uploadZone = document.getElementById('upload-zone');
-                const backButton = document.getElementById('review-back-button');
-                
-                if (imagePreview && previewArea && uploadZone) {
-                    imagePreview.src = compressedDataUrl;
-                    previewArea.classList.remove('hidden');
-                    uploadZone.classList.add('hidden');
-                    if (backButton) backButton.classList.add('hidden');
-                }
-            });
-        }
-        reader.readAsDataURL(file);
+    let file = null;
+    if (event && event.target && event.target.files && event.target.files.length > 0) {
+        file = event.target.files[0];
+    } else if (event && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+        file = event.dataTransfer.files[0];
     }
+
+    if (!file) return;
+
+    if (file.type && !file.type.startsWith('image/')) {
+        alert('画像ファイル（JPEG, PNG, WEBPなど）を選択してください。');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const rawDataUrl = e.target.result;
+        compressImage(rawDataUrl, 1200, 1200, 0.8, (compressedDataUrl) => {
+            const imagePreview = document.getElementById('image-preview');
+            const previewArea = document.getElementById('preview-area');
+            const uploadZone = document.getElementById('upload-zone');
+            const backButton = document.getElementById('review-back-button');
+            
+            if (imagePreview && previewArea && uploadZone) {
+                imagePreview.src = compressedDataUrl;
+                previewArea.classList.remove('hidden');
+                uploadZone.classList.add('hidden');
+                if (backButton) backButton.classList.add('hidden');
+            }
+        });
+    };
+    reader.onerror = function(err) {
+        console.error('FileReader error:', err);
+        alert('画像の読み込みに失敗しました。別の写真でお試しください。');
+    };
+    reader.readAsDataURL(file);
 }
 
 // ==========================================
@@ -356,29 +397,19 @@ function startReviewProcess() {
         const base64Data = imagePreview.src.split(',')[1];
         const mimeType = imagePreview.src.split(';')[0].split(':')[1] || 'image/jpeg';
         
-        // ユーザーのプロファイル（設定）を読み込んでプロンプトに反映する
-        const designPref = localStorage.getItem('design-preference') || '50';
-        const activityPref = localStorage.getItem('activity-preference') || '50';
-        const motivationPref = localStorage.getItem('motivation-preference') || '50';
-        const learningStyle = localStorage.getItem('learning-style') || '50';
-        const otherPrefs = localStorage.getItem('other-preferences') || '';
+        // 15個のカスタマイズプロファイルを生成
+        const aiProfilePrompt = buildAISystemPromptProfile();
 
-        const systemPrompt = `あなたは優秀で親しみやすいAI学習アシスタントです。
-ユーザーがアップロードした勉強用ノート（またはプリントなどの画像）を分析してください。
+        const systemPrompt = `あなたは学習アシスタント「わかるくん」です。
+ユーザーがアップロードした勉強用ノート（またはプリントなどの画像）を分析・解説してください。
 
-【ユーザーの学習スタイル・プロフィール設定】
-- 好みのデザインや雰囲気 (静か←50→派手): ${designPref}/100
-- 興味のあるジャンル (インドア←50→アウトドア): ${activityPref}/100
-- モチベーションのタイプ (マイペース←50→競争ゲーム型): ${motivationPref}/100
-- 新しいことを学ぶアプローチ (じっくり理解型←50→まずやってみる型): ${learningStyle}/100
-- その他の好みや趣味: "${otherPrefs}"
+${aiProfilePrompt}
 
-【指示】
-1. ノートの画像を認識し、学習している科目（例：数学、国語、英語、理科、社会等）と、具体的な「単元名」や「学習トピック」を特定してください。
-2. 画像から読み取れる内容を、優しく分かりやすく2〜3文で要約してください。
-3. 学習スタイルや好みの趣味をふまえ、親しみやすい言葉遣いで、最初の挨拶と分析結果を伝えてください。
-4. 最後に「今日はこのノートについてどんなことが知りたい？」「何から説明してほしい？」などの具体的な問いかけを行ってください。
-5. Markdown形式（箇条書き、太字等。HTMLタグではなくMarkdown）を使って見やすくフォーマットしてください。`;
+【解説における指示】
+1. ノートの画像を認識し、学習科目（例：数学、国語、英語、理科、社会等）と具体単元名を特定してください。
+2. 画像の内容を要約し、設定プロファイルで指定された【口調・テンション・長さ・例え話・キャラクター性】を100%忠実に守って回答してください。
+3. 語尾、絵文字、厳しさ、熱量も設定プロファイル通りに完全に表現してください。
+4. Markdown形式（箇条書き、太字等）で見やすくフォーマットしてください。`;
 
         const contents = [
             {
@@ -476,34 +507,24 @@ function sendChatQuestion() {
         const messages = chatLog.querySelectorAll('.chat-message:not(.loading-indicator)');
         const contents = [];
         
-        const designPref = localStorage.getItem('design-preference') || '50';
-        const activityPref = localStorage.getItem('activity-preference') || '50';
-        const motivationPref = localStorage.getItem('motivation-preference') || '50';
-        const learningStyle = localStorage.getItem('learning-style') || '50';
-        const otherPrefs = localStorage.getItem('other-preferences') || '';
+        const aiProfilePrompt = buildAISystemPromptProfile();
 
         contents.push({
             role: 'user',
             parts: [{
-                text: `システム指示:
-あなたは親しみやすいAI学習アシスタントです。
+                text: `【対話指示】
+あなたはAI学習アシスタント「わかるくん」です。
 アップロードされた学習ノートに関して対話型授業を行っています。
-ユーザーの質問に対し、わかりやすく丁寧に回答してください。
 
-【ユーザープロフィール】
-- 好みのデザインや雰囲気: ${designPref}/100
-- 興味のあるジャンル: ${activityPref}/100
-- モチベーションのタイプ: ${motivationPref}/100
-- 学習アプローチ: ${learningStyle}/100
-- その他: "${otherPrefs}"
+${aiProfilePrompt}
 
-※回答はMarkdown形式（箇条書き、太字等）でフォーマットして読みやすくしてください。
-※これまでのチャット履歴に従って、自然に対話を継続してください。`
+※上記で指示された【口調・トーン・褒め方・長さ・厳しさ・キャラクター性・熱量】を100%徹底して自然に対話を継続してください。
+※回答はMarkdown形式（箇条書き、太字等）で読みやすくまとめてください。`
             }]
         });
         contents.push({
             role: 'model',
-            parts: [{ text: "了解しました。プロフィールをふまえ、学習を最大限にサポートする対話を継続します。" }]
+            parts: [{ text: "了解しました！設定されたプロフィール・口調・キャラクター性に100%従って対話を継続します。" }]
         });
 
         messages.forEach(msg => {
@@ -589,53 +610,88 @@ function handleChatKeyPress(event) {
 }
 
 // ==========================================
-// 🎯 復習を完了して履歴に保存してホームへ
+// 💾 「わかるくん」の授業＆練習結果を統一学習記録として保存
 // ==========================================
-function finishReviewAndSave() {
+function saveWakaruSessionAndReturnHome() {
     const now = new Date();
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const dd = String(now.getDate()).padStart(2, '0');
     const dateString = `${yyyy}/${mm}/${dd}`;
     
-    // チャットログの全メッセージを取得
+    // 1. チャットログのメッセージをすべて取得
     const chatLogEl = document.getElementById('ai-chat-log');
     const chatHistory = [];
     if (chatLogEl) {
         const messages = chatLogEl.querySelectorAll('.chat-message');
         messages.forEach(msg => {
             const sender = msg.classList.contains('ai') ? 'ai' : 'user';
-            const textParagraph = msg.querySelector('p');
-            const text = textParagraph ? textParagraph.innerHTML : '';
-            chatHistory.push({ sender, text });
+            const contentEl = msg.querySelector('div, p');
+            const text = contentEl ? contentEl.innerHTML : (msg.innerText || '');
+            if (text && text.trim()) {
+                chatHistory.push({ sender, text });
+            }
         });
     }
 
-    // アップロードした画像を取得
-    const teachingPreview = document.getElementById('teaching-image-preview');
-    const imageSrc = teachingPreview ? teachingPreview.src : null;
+    // 2. 練習問題を実施していた場合、その結果も1つの学習記録内に統合保存
+    const scoreVal = document.getElementById('practice-score-val');
+    const scoreDisp = document.getElementById('practice-score-display');
+    let hasPractice = false;
+    let practiceScoreStr = '';
+    
+    if (currentPracticeQuestions && currentPracticeQuestions.length > 0 && scoreDisp && !scoreDisp.classList.contains('hidden')) {
+        hasPractice = true;
+        practiceScoreStr = scoreVal ? scoreVal.textContent : '0';
+        
+        let practiceLog = `🎯 <strong>ピンポイント練習問題（5問）結果: ${practiceScoreStr} / 100 点</strong><br><br>`;
+        currentPracticeQuestions.forEach((q, idx) => {
+            practiceLog += `<strong>【問${idx + 1}】 ${escapeHtml(q.title)}</strong><br>・正解: ${escapeHtml(q.answer)}<br>・解説: ${escapeHtml(q.explanation)}<br><br>`;
+        });
+        if (typeof lastWakaruAdvice !== 'undefined' && lastWakaruAdvice) {
+            practiceLog += `💡 <strong>わかるくんからのアドバイス:</strong><br>${convertMarkdownToHtml(lastWakaruAdvice)}`;
+        }
+        chatHistory.push({ sender: 'ai', text: practiceLog });
+    }
 
-    // 履歴データに新規追加（先頭に挿入）
+    // 3. ノート写真の取得
+    const teachingPreview = document.getElementById('teaching-image-preview');
+    let imageSrc = (teachingPreview && teachingPreview.src && teachingPreview.src.startsWith('data:')) ? teachingPreview.src : null;
+
+    let title = 'わかるくんの解説授業';
+    if (hasPractice) {
+        title = `わかるくん解説授業 ＆ 練習問題 (得点: ${practiceScoreStr}点)`;
+    } else if (chatHistory.length > 1) {
+        title = 'わかるくんのノート解説＆質疑応答';
+    }
+
+    // 4. 1つの学習記録オブジェクトとして保存
     dummyHistory.unshift({
-        id: 'h_' + Date.now(),
+        id: 'h_session_' + Date.now(),
         date: dateString,
         subject: '数学',
-        title: '数学：二次関数の最大・最小',
-        icon: '📊',
+        title: title,
+        icon: hasPractice ? '🎯' : '📚',
         image: imageSrc,
         chat: chatHistory
     });
-    
+
     saveHistory();
-    
-    // 履歴カードを再描画
+
+    // 練習問題状態とフォームをクリア
+    currentPracticeQuestions = [];
+    if (typeof lastWakaruAdvice !== 'undefined') lastWakaruAdvice = '';
+    if (scoreDisp) scoreDisp.classList.add('hidden');
+    const adviceBox = document.getElementById('wakaru-advice-box');
+    if (adviceBox) adviceBox.classList.add('hidden');
+
     renderHistory();
-    
-    // ファイル選択をリセット
     clearFileSelect();
-    
-    // ホームへ戻る
     switchScreen('home');
+}
+
+function finishReviewAndSave() {
+    saveWakaruSessionAndReturnHome();
 }
 
 // エスケープ処理（セキュリティ対策）
@@ -665,143 +721,176 @@ function switchScreen(screenId) {
 // ==========================================
 // 📝 テスト機能の制御ロジック
 // ==========================================
+let currentTestQuestions = [];
+
 function startTest() {
-    // 解答欄の初期化
-    document.getElementById('q1-ans-x').value = '';
-    document.getElementById('q1-ans-y').value = '';
-    document.getElementById('q2-ans').value = '';
-    document.getElementById('q3-ans').value = '';
+    const container = document.getElementById('test-questions-container');
+    if (!container) return;
 
-    // 編集可能にする
-    document.getElementById('q1-ans-x').readOnly = false;
-    document.getElementById('q1-ans-y').readOnly = false;
-    document.getElementById('q2-ans').readOnly = false;
-    document.getElementById('q3-ans').readOnly = false;
-
-    // フィードバックと得点表示の非表示化
-    document.getElementById('q1-feedback').classList.add('hidden');
-    document.getElementById('q2-feedback').classList.add('hidden');
-    document.getElementById('q3-feedback').classList.add('hidden');
-    document.getElementById('test-score-display').classList.add('hidden');
-    
-    // ボタン表示のリセット
-    document.getElementById('grade-test-btn').classList.remove('hidden');
-    document.getElementById('finish-test-btn').classList.add('hidden');
-    document.getElementById('test-abort-btn').classList.remove('hidden');
-
-    // 実施日の設定
     const now = new Date();
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const dd = String(now.getDate()).padStart(2, '0');
-    document.getElementById('test-date').textContent = `${yyyy}/${mm}/${dd}`;
+    const testDateEl = document.getElementById('test-date');
+    if (testDateEl) testDateEl.textContent = `${yyyy}/${mm}/${dd}`;
 
-    // テスト用紙画面へ切り替え
+    const scoreDisplay = document.getElementById('test-score-display');
+    if (scoreDisplay) scoreDisplay.classList.add('hidden');
+
+    const gradeBtn = document.getElementById('grade-test-btn');
+    if (gradeBtn) gradeBtn.classList.remove('hidden');
+
+    const finishBtn = document.getElementById('finish-test-btn');
+    if (finishBtn) finishBtn.classList.add('hidden');
+
+    const abortBtn = document.getElementById('test-abort-btn');
+    if (abortBtn) abortBtn.classList.remove('hidden');
+
+    let subjectName = '総合';
+    if (dummyHistory.length > 0) {
+        subjectName = dummyHistory[0].subject || '総合';
+    }
+
+    currentTestQuestions = [
+        {
+            title: `【問 1】 (${subjectName}) 次の計算に答えよ: 15 × 6 - 25`,
+            answer: '65',
+            type: 'short',
+            points: 30,
+            explanation: '15 × 6 = 90、90 - 25 = 65 です。'
+        },
+        {
+            title: `【問 2】 (英語) 「私は昨日勉強しました」の英文の空欄に入る単語を答えよ: I ( _______ ) yesterday.`,
+            answer: 'studied',
+            type: 'short',
+            points: 35,
+            explanation: 'study の過去形は studied です。'
+        },
+        {
+            title: `【問 3】 (学習法) 間違えた問題を復習する際、最も効果的な行動はどれか？`,
+            answer: '解き直し',
+            keywords: ['解き直し', '復習', '確認', 'やり直し', '反復', '自分で解く'],
+            type: 'short',
+            points: 35,
+            explanation: '解説を読むだけでなく、自分の力で解き直すことが最も大切です。'
+        }
+    ];
+
+    container.innerHTML = '';
+    currentTestQuestions.forEach((q, idx) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'test-question-item';
+        itemDiv.style.marginBottom = '20px';
+        itemDiv.innerHTML = `
+            <div class="q-title" style="font-weight: bold; margin-bottom: 8px;">
+                ${escapeHtml(q.title)} <span class="q-points" style="color: #7f8c8d; font-size: 0.85rem;">（${q.points}点）</span>
+            </div>
+            <div class="q-answer-area" style="margin-bottom: 8px;">
+                答：<input type="text" id="test-q-${idx}" placeholder="解答を入力" class="q-input-medium" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--glass-border); width: 80%; max-width: 300px;">
+            </div>
+            <div class="q-feedback hidden" id="test-fb-${idx}" style="padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.6); margin-top: 6px;">
+                <span class="grade-mark" style="font-weight: bold; font-size: 1.2rem; margin-right: 8px;"></span>
+                <span class="q-explanation" style="font-size: 0.9rem; color: #34495e;">${q.explanation}</span>
+            </div>
+        `;
+        container.appendChild(itemDiv);
+    });
+
     switchScreen('test-paper');
 }
 
 function gradeTest() {
-    const q1X = document.getElementById('q1-ans-x').value.trim();
-    const q1Y = document.getElementById('q1-ans-y').value.trim();
-    const q2 = document.getElementById('q2-ans').value.trim();
-    const q3 = document.getElementById('q3-ans').value.trim().toLowerCase();
-
     let score = 0;
-    
-    // 問1 採点 (30点) - xが3かつyが-4
-    const q1Correct = (q1X === '3' && q1Y === '-4');
-    if (q1Correct) score += 30;
-    
-    // 問2 採点 (35点) - 置き字を読まない/書かない旨のキーワードが含まれているか
-    const q2Correct = (q2.includes('読ま') || q2.includes('書かない') || q2.includes('訳さない') || q2.includes('無視') || q2.includes('処理しない') || q2.includes('書き下さない'));
-    if (q2Correct) score += 35;
-    
-    // 問3 採点 (35点) - went
-    const q3Correct = (q3 === 'went');
-    if (q3Correct) score += 35;
-
-    // 各問のフィードバック表示
-    displayQuestionFeedback('q1-feedback', q1Correct);
-    displayQuestionFeedback('q2-feedback', q2Correct);
-    displayQuestionFeedback('q3-feedback', q3Correct);
-
-    // 得点の表示
-    const scoreVal = document.getElementById('test-score-val');
-    if (scoreVal) {
-        scoreVal.textContent = score;
-    }
-    const scoreDisplay = document.getElementById('test-score-display');
-    if (scoreDisplay) {
-        scoreDisplay.classList.remove('hidden');
-    }
-
-    // ボタンの表示切替
-    document.getElementById('grade-test-btn').classList.add('hidden');
-    document.getElementById('finish-test-btn').classList.remove('hidden');
-    document.getElementById('test-abort-btn').classList.add('hidden'); // 採点後は途中で戻れなくし、完了ボタンで戻らせる
-
-    // 入力欄を読み取り専用にする
-    document.getElementById('q1-ans-x').readOnly = true;
-    document.getElementById('q1-ans-y').readOnly = true;
-    document.getElementById('q2-ans').readOnly = true;
-    document.getElementById('q3-ans').readOnly = true;
-}
-
-function displayQuestionFeedback(feedbackId, isCorrect) {
-    const feedbackEl = document.getElementById(feedbackId);
-    if (!feedbackEl) return;
-
-    feedbackEl.classList.remove('hidden');
-    const markEl = feedbackEl.querySelector('.grade-mark');
-    if (markEl) {
-        if (isCorrect) {
-            markEl.textContent = '◯';
-            markEl.className = 'grade-mark mark-correct';
+    currentTestQuestions.forEach((q, idx) => {
+        const inputEl = document.getElementById(`test-q-${idx}`);
+        const userAns = inputEl ? inputEl.value.trim() : '';
+        const fbEl = document.getElementById(`test-fb-${idx}`);
+        
+        let isCorrect = false;
+        if (q.keywords && Array.isArray(q.keywords)) {
+            isCorrect = q.keywords.some(kw => userAns.includes(kw));
         } else {
-            markEl.textContent = '✗';
-            markEl.className = 'grade-mark mark-incorrect';
+            isCorrect = (userAns.toLowerCase() === q.answer.toLowerCase());
         }
-    }
+
+        if (isCorrect) score += q.points;
+
+        if (fbEl) {
+            fbEl.classList.remove('hidden');
+            const markEl = fbEl.querySelector('.grade-mark');
+            if (markEl) {
+                markEl.textContent = isCorrect ? '◯ 正解' : '✗ 不正解';
+                markEl.style.color = isCorrect ? '#2ecc71' : '#e74c3c';
+            }
+        }
+        if (inputEl) inputEl.readOnly = true;
+    });
+
+    const scoreVal = document.getElementById('test-score-val');
+    if (scoreVal) scoreVal.textContent = score;
+    const scoreDisp = document.getElementById('test-score-display');
+    if (scoreDisp) scoreDisp.classList.remove('hidden');
+
+    const gradeBtn = document.getElementById('grade-test-btn');
+    if (gradeBtn) gradeBtn.classList.add('hidden');
+    const finishBtn = document.getElementById('finish-test-btn');
+    if (finishBtn) finishBtn.classList.remove('hidden');
+    const abortBtn = document.getElementById('test-abort-btn');
+    if (abortBtn) abortBtn.classList.add('hidden');
 }
 
-function finishTest() {
+function finishTestSessionAndSave() {
+    const scoreVal = document.getElementById('test-score-val');
+    const score = scoreVal ? scoreVal.textContent : '0';
+
     const now = new Date();
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const dd = String(now.getDate()).padStart(2, '0');
     const dateString = `${yyyy}/${mm}/${dd}`;
-    
-    const scoreVal = document.getElementById('test-score-val');
-    const score = scoreVal ? scoreVal.textContent : '0';
-    
-    // テスト解答内容を元にチャット履歴風のログを作成
-    const q1X = document.getElementById('q1-ans-x').value.trim();
-    const q1Y = document.getElementById('q1-ans-y').value.trim();
-    const q2 = document.getElementById('q2-ans').value.trim();
-    const q3 = document.getElementById('q3-ans').value.trim();
-    
+
     const chatHistory = [
-        { sender: 'ai', text: `実力診断テストを解きました！得点は <strong>${score} / 100 点</strong> です。` },
-        { sender: 'user', text: `【解答内容】<br>問1 (x, y): (${q1X || '未入力'}, ${q1Y || '未入力'})<br>問2: ${q2 || '未入力'}<br>問3: ${q3 || '未入力'}` },
-        { sender: 'ai', text: `今回の弱点分析：<br>・問1 (二次関数の頂点)：${q1X === '3' && q1Y === '-4' ? '正解！平方完成がしっかりできています。' : '不正解。y = (x-3)² - 4 と変形する部分を確認しましょう。'}<br>・問2 (漢文の置き字)：${(q2.includes('読ま') || q2.includes('書かない') || q2.includes('訳さない') || q2.includes('無視') || q2.includes('処理しない')) ? '正解！置き字の性質が頭に入っています。' : '不正解。置き字は書き下し文では「読まない」のが基本ルールです。'}<br>・問3 (goの過去形)：${q3.toLowerCase().trim() === 'went' ? '正解！不規則変化動詞もバッチリです。' : '不正解。go の過去形は went です。'}` }
+        { sender: 'ai', text: `📝 <strong>実力診断テスト結果: ${score} / 100 点</strong>` }
     ];
 
-    // 学習履歴にテスト結果を保存
+    currentTestQuestions.forEach((q, idx) => {
+        const inputEl = document.getElementById(`test-q-${idx}`);
+        const userAns = inputEl ? inputEl.value : '';
+        chatHistory.push({
+            sender: 'ai',
+            text: `<strong>${escapeHtml(q.title)}</strong><br>・あなたの解答: ${escapeHtml(userAns || '未入力')}<br>・解説: ${escapeHtml(q.explanation)}`
+        });
+    });
+
     dummyHistory.unshift({
-        id: 'h_' + Date.now(),
+        id: 'h_session_' + Date.now(),
         date: dateString,
-        subject: 'すべて',
-        title: `実力診断テスト（得点: ${score}点）`,
+        subject: '実力テスト',
+        title: `実力診断テスト (得点: ${score}点)`,
         icon: '📝',
         image: null,
         chat: chatHistory
     });
-    
+
     saveHistory();
-    
-    // 履歴を再描画してホーム画面へ
     renderHistory();
     switchScreen('home');
+}
+
+function finishTest() {
+    finishTestSessionAndSave();
+}
+
+function confirmResetAllData() {
+    if (confirm('保存されているすべての学習記録を完全に削除して初期化しますか？')) {
+        dummyHistory = [];
+        localStorage.removeItem('ai-study-history');
+        localStorage.setItem('ai-study-history-v3', 'true');
+        saveHistory();
+        renderHistory();
+        alert('すべての学習記録を削除し、初期状態に一新しました。');
+        switchScreen('home');
+    }
 }
 
 // ==========================================
@@ -845,14 +934,14 @@ function openHistoryChat(id) {
                 msgEl.style.cssText = 'display: flex; gap: 8px; align-self: flex-start;';
                 msgEl.innerHTML = `
                     <span style="font-size: 1.2rem;">🤖</span>
-                    <p>${msg.text}</p>
+                    <div>${msg.text}</div>
                 `;
             } else {
                 msgEl.className = 'chat-message user';
                 msgEl.style.cssText = 'display: flex; gap: 8px; align-self: flex-end; flex-direction: row-reverse;';
                 msgEl.innerHTML = `
                     <span style="font-size: 1.2rem;">👤</span>
-                    <p>${msg.text}</p>
+                    <div>${msg.text}</div>
                 `;
             }
             chatLog.appendChild(msgEl);
@@ -1018,18 +1107,98 @@ function handleHistoryChatKeyPress(event) {
     }
 }
 
+// 15個のAIカスタマイズスライダーのマップ
+const allSettingSliders = {
+    'design-preference-slider': 'design-preference',
+    'activity-preference-slider': 'activity-preference',
+    'motivation-preference-slider': 'motivation-preference',
+    'learning-style-slider': 'learning-style',
+    'tone-preference-slider': 'tone-preference',
+    'praise-preference-slider': 'praise-preference',
+    'length-preference-slider': 'length-preference',
+    'analogy-preference-slider': 'analogy-preference',
+    'difficulty-preference-slider': 'difficulty-preference',
+    'character-preference-slider': 'character-preference',
+    'interaction-preference-slider': 'interaction-preference',
+    'strictness-preference-slider': 'strictness-preference',
+    'hint-preference-slider': 'hint-preference',
+    'pace-preference-slider': 'pace-preference',
+    'energy-preference-slider': 'energy-preference'
+};
+
+/**
+ * 15個の設定スライダーとテキストからAI用のカスタマイズプロンプトを構築
+ */
+function buildAISystemPromptProfile() {
+    const getVal = (key) => parseInt(localStorage.getItem(key) || '50', 10);
+    const otherPrefs = localStorage.getItem('other-preferences') || '';
+
+    const design = getVal('design-preference');
+    const activity = getVal('activity-preference');
+    const motivation = getVal('motivation-preference');
+    const learning = getVal('learning-style');
+    const tone = getVal('tone-preference');
+    const praise = getVal('praise-preference');
+    const length = getVal('length-preference');
+    const analogy = getVal('analogy-preference');
+    const difficulty = getVal('difficulty-preference');
+    const character = getVal('character-preference');
+    const interaction = getVal('interaction-preference');
+    const strictness = getVal('strictness-preference');
+    const hint = getVal('hint-preference');
+    const pace = getVal('pace-preference');
+    const energy = getVal('energy-preference');
+
+    // 15のプロンプト要素生成
+    let toneText = tone >= 66 ? "語尾は完全フレンドリーなタメ口（〜だよ！〜ね！〜してみよう！）で親しみやすく話してください。" : (tone <= 35 ? "超丁寧な敬語（〜でございます、〜でしょうか、ご説明いたします）で礼儀正しく話してください。" : "標準的で親切な言葉遣い（〜ですね、〜してみましょう）で話してください。");
+    
+    let praiseText = praise >= 66 ? "正解や頑張りを大絶賛してください！『天才！すごすぎる！大正解！🎉✨』とハイテンションで大袈裟なくらい褒めて盛り上げてください。" : (praise <= 35 ? "静かに落ち着いて『よくできました』『正解です』と優しく褒めてください。" : "『素晴らしいですね！大正解です』と適度に褒めてください。");
+    
+    let lengthText = length >= 66 ? "解説やメッセージは背景や補足知識を含めて手厚く長めにしっかり説明してください。" : (length <= 35 ? "解説やメッセージは要点のみを2〜3行で極めて簡潔・スッキリまとめてください。" : "長すぎず短すぎず、分かりやすい標準的な長さで解説してください。");
+    
+    let analogyText = analogy >= 66 ? "日常生活、アニメ、ゲーム、スポーツなどの具体的な例え話を必ず1つ以上取り入れて説明してください。" : (analogy <= 35 ? "例え話は使わず、教科書通りの論理的で厳密な言葉で説明してください。" : "必要に応じて分かりやすい例え話を交えて説明してください。");
+    
+    let characterText = character >= 66 ? "頼れる『先生』というよりは、隣で一緒に悩んで成長する『友達・相棒・パートナー』のキャラクターとして振る舞ってください。" : (character <= 35 ? "導いてくれる頼もしく知的で権威のある『先生・講師』のキャラクターとして振る舞ってください。" : "優しく親しみやすいAI学習アシスタントとして振る舞ってください。");
+    
+    let strictnessText = strictness >= 66 ? "甘やかさず、間違えた箇所や弱点をズバッと指摘し『ここは絶対復習しよう！次回は逃さないぞ！』と熱血スパルタに指導してください。" : (strictness <= 35 ? "全肯定スタイルで、間違えても『大丈夫！素晴らしい挑戦だよ！次回頑張ろう』と優しく包み込んでください。" : "優しく励ましつつ、改善点も的確に伝えるスタイルで指導してください。");
+    
+    let energyText = energy >= 66 ? "パッション溢れる熱血エネルギッシュなキャラで、『燃えてきたぞ！全力で突き進もう！🔥』とパッション全開で接してください。" : (energy <= 35 ? "落ち着いた知性派・クールなキャラで、冷静かつスマートに接してください。" : "元気で前向きなトーンで接してください。");
+
+    let interactionText = interaction >= 66 ? "解説の最後には『君ならどう思う？』など、ユーザーへ積極的に問いかけやクイズを出してください。" : "必要以上の質問は避け、スッキリと解説を完結させてください。";
+    
+    let hintText = hint >= 66 ? "すぐに答えは教えず、『まずはここに着目してみてごらん！』と段階的なヒントを出して考えさせてください。" : "迷わせずダイレクトに正解と手順を直球提示してください。";
+
+    let difficultyText = difficulty >= 66 ? "基礎だけでなく、一歩踏み込んだ応用・発展的な視点や裏技・応用知識も紹介してください。" : "難易度の高い用語は避け、基礎の基礎から優しく丁寧に教えてください。";
+
+    let interestText = activity >= 66 ? "ユーザーはアウトドア派（スポーツ、旅行、アクティビティ好き）です。" : "ユーザーはインドア派（読書、ゲーム、室内趣味好き）です。";
+    
+    let otherText = otherPrefs ? `ユーザーのその他の興味・得意分野: "${otherPrefs}"。これを会話や例え話に自然に取り入れてください。` : "";
+
+    return `
+【ユーザーが設定した15個のAIカスタマイズプロファイル（※以下の指示を100%厳密に反映してください）】
+1. 口調・トーン: ${toneText}
+2. 褒め方の強さ: ${praiseText}
+3. 解説の長さ: ${lengthText}
+4. 例え話の多さ: ${analogyText}
+5. キャラクター性: ${characterText}
+6. アドバイスの厳しさ: ${strictnessText}
+7. キャラクターの熱量: ${energyText}
+8. 問いかけ頻度: ${interactionText}
+9. ヒントの出し方: ${hintText}
+10. 発展難易度: ${difficultyText}
+11. 興味ジャンル: ${interestText}
+12. モチベーションタイプ: ${motivation >= 66 ? '競争・ゲーム感覚でスコア獲得を目指す型' : '自分のペース重視型'}
+13. 学習アプローチ: ${learning >= 66 ? 'まず問題を解いてみる実践型' : '理論をじっくり理解する型'}
+14. 画面の雰囲気好み: ${design >= 66 ? '賑やか・カラフル' : '落ち着いたシンプル'}
+15. その他情報: ${otherText}
+`.trim();
+}
+
 // ==========================================
 // ⚙️ 設定画面の保存・読込ロジック
 // ==========================================
 function saveSettings() {
-    const sliders = {
-        'design-preference-slider': 'design-preference',
-        'activity-preference-slider': 'activity-preference',
-        'motivation-preference-slider': 'motivation-preference',
-        'learning-style-slider': 'learning-style'
-    };
-
-    for (const [id, key] of Object.entries(sliders)) {
+    for (const [id, key] of Object.entries(allSettingSliders)) {
         const slider = document.getElementById(id);
         if (slider) {
             localStorage.setItem(key, slider.value);
@@ -1068,14 +1237,7 @@ function saveSettings() {
 }
 
 function loadSettings() {
-    const sliders = {
-        'design-preference-slider': 'design-preference',
-        'activity-preference-slider': 'activity-preference',
-        'motivation-preference-slider': 'motivation-preference',
-        'learning-style-slider': 'learning-style'
-    };
-
-    for (const [id, key] of Object.entries(sliders)) {
+    for (const [id, key] of Object.entries(allSettingSliders)) {
         const slider = document.getElementById(id);
         if (slider) {
             const savedVal = localStorage.getItem(key);
@@ -1134,14 +1296,720 @@ async function callGeminiAPI(contents) {
     return text;
 }
 
-function convertMarkdownToHtml(text) {
-    let html = escapeHtml(text);
-    // 改行をbrに変換
-    html = html.replace(/\n/g, '<br>');
-    // 太字 **text** -> <strong>text</strong>
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    // 箇条書き
-    html = html.replace(/^(?:\s*[-*+]\s+)(.*?)$/gm, '• $1');
-    return `<div style="line-height: 1.5; font-size: 0.88rem;">${html}</div>`;
+function processInlineMarkdown(text) {
+    if (!text) return '';
+    let str = text;
+    // 太字 **text** または __text__
+    str = str.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    str = str.replace(/__(.*?)__/g, '<strong>$1</strong>');
+    // 斜体 *text* または _text_
+    str = str.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    str = str.replace(/_(.*?)_/g, '<em>$1</em>');
+    // 打ち消し線 ~~text~~
+    str = str.replace(/~~(.*?)~~/g, '<del>$1</del>');
+    return str;
 }
+
+function parseCustomMarkdown(text) {
+    if (!text) return '';
+    let str = text;
+
+    // コードブロック ```code```
+    str = str.replace(/```([\s\S]*?)```/g, (match, p1) => {
+        return `<pre style="background: rgba(0,0,0,0.06); padding: 12px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 0.85rem; margin: 8px 0;"><code>${escapeHtml(p1.trim())}</code></pre>`;
+    });
+
+    // インラインコード `code`
+    str = str.replace(/`([^`]+)`/g, (match, p1) => {
+        return `<code style="background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85rem;">${escapeHtml(p1)}</code>`;
+    });
+
+    const lines = str.split('\n');
+    let htmlLines = [];
+    let inList = false;
+    let listType = null;
+
+    lines.forEach(line => {
+        let trimmed = line.trim();
+
+        // 見出し #, ##, ###
+        if (/^#{1,6}\s+/.test(trimmed)) {
+            if (inList) { htmlLines.push(listType === 'ul' ? '</ul>' : '</ol>'); inList = false; }
+            const level = trimmed.match(/^(#{1,6})/)[1].length;
+            const content = trimmed.replace(/^#{1,6}\s+/, '');
+            const fontSize = level === 1 ? '1.25rem' : level === 2 ? '1.1rem' : '1.0rem';
+            htmlLines.push(`<h${level} style="font-size: ${fontSize}; font-weight: 700; margin: 10px 0 4px 0; color: var(--accent-purple);">${processInlineMarkdown(content)}</h${level}>`);
+            return;
+        }
+
+        // 箇条書きリスト - item, * item, + item
+        if (/^[-*+]\s+/.test(trimmed)) {
+            if (!inList || listType !== 'ul') {
+                if (inList) htmlLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+                htmlLines.push('<ul style="margin: 6px 0; padding-left: 20px; list-style-type: disc;">');
+                inList = true;
+                listType = 'ul';
+            }
+            const content = trimmed.replace(/^[-*+]\s+/, '');
+            htmlLines.push(`<li style="margin: 3px 0;">${processInlineMarkdown(content)}</li>`);
+            return;
+        }
+
+        // 番号付きリスト 1. item
+        if (/^\d+\.\s+/.test(trimmed)) {
+            if (!inList || listType !== 'ol') {
+                if (inList) htmlLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+                htmlLines.push('<ol style="margin: 6px 0; padding-left: 20px;">');
+                inList = true;
+                listType = 'ol';
+            }
+            const content = trimmed.replace(/^\d+\.\s+/, '');
+            htmlLines.push(`<li style="margin: 3px 0;">${processInlineMarkdown(content)}</li>`);
+            return;
+        }
+
+        if (inList && trimmed === '') {
+            htmlLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+            inList = false;
+        }
+
+        // 引用 > text
+        if (/^>\s+/.test(trimmed)) {
+            const content = trimmed.replace(/^>\s+/, '');
+            htmlLines.push(`<blockquote style="border-left: 4px solid var(--accent-blue); padding-left: 12px; margin: 8px 0; color: #546e7a; font-style: italic;">${processInlineMarkdown(content)}</blockquote>`);
+            return;
+        }
+
+        // 区切り線 ---
+        if (/^(---|\*\*\*|___)$/.test(trimmed)) {
+            htmlLines.push('<hr style="border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 10px 0;">');
+            return;
+        }
+
+        if (trimmed === '') {
+            htmlLines.push('<div style="height: 4px;"></div>');
+        } else {
+            htmlLines.push(`<p style="margin: 3px 0; line-height: 1.6;">${processInlineMarkdown(trimmed)}</p>`);
+        }
+    });
+
+    if (inList) {
+        htmlLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+    }
+
+    return `<div class="markdown-body" style="line-height: 1.6; font-size: 0.9rem;">${htmlLines.join('\n')}</div>`;
+}
+
+function convertMarkdownToHtml(text) {
+    if (!text) return '';
+    if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+        try {
+            return `<div class="markdown-body" style="line-height: 1.6; font-size: 0.9rem;">${marked.parse(text)}</div>`;
+        } catch (e) {
+            console.error('marked.js parse error:', e);
+        }
+    }
+    return parseCustomMarkdown(text);
+}
+
+// ==========================================
+// 🎯 練習問題 (5問) 自動生成・採点ロジック
+// ==========================================
+let currentPracticeQuestions = [];
+
+/**
+ * 「練習問題へ進む」が押された際の処理
+ * やった内容に合わせた問題5問をGemini APIまたはフォールバックで生成
+ */
+async function goToPracticeQuestions() {
+    // ローディング画面で進捗提示
+    switchScreen('loading');
+    const loadingText = document.querySelector('#loading-screen h3');
+    const loadingSub = document.querySelector('#loading-screen p');
+    const originalH3 = loadingText ? loadingText.textContent : '';
+    const originalSub = loadingSub ? loadingSub.textContent : '';
+
+    if (loadingText) loadingText.textContent = '🎯 学習内容に合わせた練習問題を生成中...';
+    if (loadingSub) loadingSub.textContent = 'AIがノートと授業ログを分析して5問のテストを作成しています';
+
+    // 授業ログテキストの抽出
+    const chatLog = document.getElementById('ai-chat-log');
+    let learnedContent = chatLog ? chatLog.innerText : '';
+    if (!learnedContent || learnedContent.trim().length < 10) {
+        learnedContent = "学習ノートの復習内容（数学、国語、英語、理科、社会の総合学習）";
+    }
+
+    const apiKey = localStorage.getItem('gemini-api-key');
+
+    if (apiKey) {
+        try {
+            const systemPrompt = `あなたはプロの学習塾の講師AIです。
+ユーザーが直前に学習・解説を受けた以下の授業ログ・ノート内容を読み込み、理解度を確かめるための【練習問題 5問】を作成してください。
+
+【学習した授業内容・ログ】
+${learnedContent}
+
+【絶対ルール】
+必ず長さ5のJSON配列形式のみを出力してください。説明テキストやMarkdownのコードブロック記法(\`\`\`json ...)は一切付けず、純粋なJSONのみを返してください。
+
+各要素のキー構造:
+[
+  {
+    "id": 1,
+    "title": "問題文を記述",
+    "type": "choice", 
+    "options": ["A. 選択肢1", "B. 選択肢2", "C. 選択肢3", "D. 選択肢4"],
+    "answer": "A. 選択肢1",
+    "explanation": "なぜこれが正解なのかの丁寧な解説"
+  },
+  ... (計5問)
+]`;
+
+            const contents = [{ role: 'user', parts: [{ text: systemPrompt }] }];
+            const responseText = await callGeminiAPI(contents);
+
+            // JSON抽出・パース
+            let cleanJsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const parsed = JSON.parse(cleanJsonStr);
+
+            if (Array.isArray(parsed) && parsed.length >= 5) {
+                currentPracticeQuestions = parsed.slice(0, 5);
+            } else {
+                throw new Error("問題数が5問未満です");
+            }
+        } catch (e) {
+            console.warn("Geminiによる練習問題生成に失敗、フォールバック問題を使用します:", e);
+            currentPracticeQuestions = generateFallbackPracticeQuestions(learnedContent);
+        }
+    } else {
+        // APIキーがない場合の模擬生成待ち演出
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        currentPracticeQuestions = generateFallbackPracticeQuestions(learnedContent);
+    }
+
+    // ローディング画面の文言を元に戻す
+    if (loadingText) loadingText.textContent = originalH3;
+    if (loadingSub) loadingSub.textContent = originalSub;
+
+    // 問題を描画して画面切替
+    renderPracticeQuestions(currentPracticeQuestions);
+    switchScreen('practice-paper');
+}
+
+/**
+ * やった内容のキーワードから5問の練習問題をフォールバック生成
+ */
+function generateFallbackPracticeQuestions(learnedContentText) {
+    const text = learnedContentText.toLowerCase();
+
+    // 数学 / 二次関数がテーマの場合
+    if (text.includes('数学') || text.includes('二次関数') || text.includes('頂点') || text.includes('平方完成')) {
+        return [
+            {
+                id: 1,
+                title: "二次関数 y = (x - 3)² - 4 の頂点の座標を求めよ。",
+                type: "choice",
+                options: ["(3, -4)", "(-3, -4)", "(3, 4)", "(-3, 4)"],
+                answer: "(3, -4)",
+                explanation: "y = a(x - p)² + q の頂点は (p, q) です。したがって (3, -4) が正解です。"
+            },
+            {
+                id: 2,
+                title: "x² - 6x を平方完成した正しい形を選べ。",
+                type: "choice",
+                options: ["(x - 3)² - 9", "(x - 3)² + 9", "(x - 6)² - 36", "(x - 3)² - 6"],
+                answer: "(x - 3)² - 9",
+                explanation: "xの係数-6の半分は-3です。(x - 3)² - (-3)² = (x - 3)² - 9 と変形します。"
+            },
+            {
+                id: 3,
+                title: "二次関数 y = -2(x + 1)² + 5 のグラフの軸の方程式を選べ。",
+                type: "choice",
+                options: ["x = -1", "x = 1", "y = 5", "x = -2"],
+                answer: "x = -1",
+                explanation: "y = a(x - p)² + q の軸は x = p です。y = -2(x - (-1))² + 5 より軸は x = -1 です。"
+            },
+            {
+                id: 4,
+                title: "二次関数 y = ax² + bx + c において、a < 0 のときグラフの形状はどのようになるか？",
+                type: "choice",
+                options: ["上に凸（山型）", "下に凸（谷型）", "直線", "右上がりの直線"],
+                answer: "上に凸（山型）",
+                explanation: "x²の係数 a が負(a < 0)のとき、グラフは上に凸（山型）になります。"
+            },
+            {
+                id: 5,
+                title: "二次関数 y = x² - 4x + 5 の y切片（x=0のときのyの値）を求めよ。",
+                type: "choice",
+                options: ["5", "-4", "1", "0"],
+                answer: "5",
+                explanation: "x = 0 を代入すると y = 0 - 0 + 5 = 5 となります。"
+            }
+        ];
+    }
+
+    // 漢文 / 国語がテーマの場合
+    if (text.includes('漢文') || text.includes('置き字') || text.includes('訓読') || text.includes('国語')) {
+        return [
+            {
+                id: 1,
+                title: "漢文における「置き字」（「而」「於」「焉」など）の書き下し文での基本的な扱いは？",
+                type: "choice",
+                options: ["読まず、書きもしない", "必ずひらがなで書く", "カタカナで音読する", "そのまま漢字で書く"],
+                answer: "読まず、書きもしない",
+                explanation: "置き字は漢文の構造上置かれますが、書き下し文では原則として読まず、書きません。"
+            },
+            {
+                id: 2,
+                title: "返り点「レ点」の読む順番のルールを選べ。",
+                type: "choice",
+                options: ["下の一字から上の一字へ戻って読む", "一字飛ばして読む", "上から順に2字読む", "一番下まで降りてから読む"],
+                answer: "下の一字から上の一字へ戻って読む",
+                explanation: "レ点は直下の一字を読んでから、すぐ上の一字へ戻って読む返り点です。"
+            },
+            {
+                id: 3,
+                title: "漢文の否定を表す助字「不」の読み方を選べ。",
+                type: "choice",
+                options: ["ず", "ならず", "べからず", "なし"],
+                answer: "ず",
+                explanation: "「不」は書き下し文で「〜ず」と打ち消しで読みます。"
+            },
+            {
+                id: 4,
+                title: "漢文を日本語の文法に合わせて読みやすく直した文を何というか？",
+                type: "choice",
+                options: ["書き下し文", "現代語訳", "白文", "本文"],
+                answer: "書き下し文",
+                explanation: "仮名交じり文に直し、日本語の語順で読めるようにした文を「書き下し文」と呼びます。"
+            },
+            {
+                id: 5,
+                title: "再読文字「未」の訓読での正しい読み方を選べ。",
+                type: "choice",
+                options: ["いまだ〜ず", "まさに〜せんとす", "よろしく〜べし", "なお〜のごとし"],
+                answer: "いまだ〜ず",
+                explanation: "「未」は「いまだ（一度目）〜ず（二度目）」と読む再読文字です。"
+            }
+        ];
+    }
+
+    // 英語がテーマの場合
+    if (text.includes('英語') || text.includes('過去形') || text.includes('動詞') || text.includes('english')) {
+        return [
+            {
+                id: 1,
+                title: "不規則動詞「go」の過去形を選べ。",
+                type: "choice",
+                options: ["went", "goed", "gone", "going"],
+                answer: "went",
+                explanation: "go の過去形は went、過去分詞は gone です。"
+            },
+            {
+                id: 2,
+                title: "動詞「buy」の過去形を選べ。",
+                type: "choice",
+                options: ["bought", "buyed", "bring", "brought"],
+                answer: "bought",
+                explanation: "buy（買う）の過去形は bought です。"
+            },
+            {
+                id: 3,
+                title: "「She (   ) to the library yesterday.」の空欄に入る適切な語を選べ。",
+                type: "choice",
+                options: ["went", "goes", "go", "is going"],
+                answer: "went",
+                explanation: "yesterday（昨日）があるので過去形 went を使います。"
+            },
+            {
+                id: 4,
+                title: "不規則動詞「make」の過去形を選べ。",
+                type: "choice",
+                options: ["made", "maked", "make", "makes"],
+                answer: "made",
+                explanation: "make の過去形・過去分詞形は made です。"
+            },
+            {
+                id: 5,
+                title: "「write」の過去形・過去分詞の正しい変化を選べ。",
+                type: "choice",
+                options: ["write - wrote - written", "write - writed - writed", "write - wrote - wrote", "write - write - written"],
+                answer: "write - wrote - written",
+                explanation: "write の活用は write - wrote - written です。"
+            }
+        ];
+    }
+
+    // 理科・光合成・呼吸がテーマの場合
+    if (text.includes('理科') || text.includes('光合成') || text.includes('呼吸') || text.includes('植物')) {
+        return [
+            {
+                id: 1,
+                title: "植物が光を受けて二酸化炭素と水から養分（デンプン）と酸素を作る働きを何というか？",
+                type: "choice",
+                options: ["光合成", "呼吸", "蒸散", "吸収"],
+                answer: "光合成",
+                explanation: "葉緑体で行われる養分作りの働きを「光合成」と呼びます。"
+            },
+            {
+                id: 2,
+                title: "植物の「呼吸」について正しい説明を選べ。",
+                type: "choice",
+                options: ["昼も夜も常に絶え間なく行っている", "夜間だけ行っている", "昼の光があるときだけ行っている", "呼吸は行わず光合成のみ行う"],
+                answer: "昼も夜も常に絶え間なく行っている",
+                explanation: "呼吸は生きている限り昼夜を問わず常に行われています。"
+            },
+            {
+                id: 3,
+                title: "光合成が行われる細胞内の小機関はどれか？",
+                type: "choice",
+                options: ["葉緑体", "液胞", "細胞核", "細胞膜"],
+                answer: "葉緑体",
+                explanation: "植物細胞に含まれる緑色の「葉緑体」で光合成が行われます。"
+            },
+            {
+                id: 4,
+                title: "昼間に植物が見かけ上「二酸化炭素を吸収し酸素を出している」ように見える理由は？",
+                type: "choice",
+                options: ["光合成の量が呼吸の量より圧倒的に多いから", "昼は呼吸を完全停止しているから", "呼吸で酸素を出しているから", "葉の表面から空気を吸わないから"],
+                answer: "光合成の量が呼吸の量より圧倒的に多いから",
+                explanation: "昼は光合成速度が呼吸速度を大きく上回るため、見かけ上二酸化炭素を吸収し酸素を出します。"
+            },
+            {
+                id: 5,
+                title: "植物の葉の裏側に多くあり、気体の出入り口となっている小さな穴を何というか？",
+                type: "choice",
+                options: ["気孔", "道管", "師管", "孔辺細胞"],
+                answer: "気孔",
+                explanation: "酸素や二酸化炭素、水蒸気の出入り口となる穴を「気孔」と呼びます。"
+            }
+        ];
+    }
+
+    // デフォルト（総合復習・確認テスト 5問）
+    return [
+        {
+            id: 1,
+            title: "【数学】二次関数 y = (x - 2)² + 3 の頂点の座標を求めよ。",
+            type: "choice",
+            options: ["(2, 3)", "(-2, 3)", "(2, -3)", "(-2, -3)"],
+            answer: "(2, 3)",
+            explanation: "y = a(x - p)² + q の頂点は (p, q) です。(2, 3) が正解です。"
+        },
+        {
+            id: 2,
+            title: "【国語】漢文の「置き字」は、書き下し文にする際どのように処理するか？",
+            type: "choice",
+            options: ["原則として読まず、書きもしない", "ひらがなで必ず書く", "一番最後にまとめて読む", "カッコをつけて残す"],
+            answer: "原則として読まず、書きもしない",
+            explanation: "置き字は漢文の文法上存在しますが、日本語として読む書き下し文では無視します。"
+        },
+        {
+            id: 3,
+            title: "【英語】動詞「go」の過去形を選べ。",
+            type: "choice",
+            options: ["went", "gone", "goed", "going"],
+            answer: "went",
+            explanation: "go の過去形は went です。"
+        },
+        {
+            id: 4,
+            title: "【理科】植物が光を受けて養分と酸素を作る反応を何というか？",
+            type: "choice",
+            options: ["光合成", "呼吸", "蒸散", "消化"],
+            answer: "光合成",
+            explanation: "葉緑体で光エネルギーを使って養分を作る働きは「光合成」です。"
+        },
+        {
+            id: 5,
+            title: "【社会】雨が非常に少なく、蒸発量が降水量を上回る気候帯はどこか？",
+            type: "choice",
+            options: ["乾燥帯", "温帯", "熱帯", "寒帯"],
+            answer: "乾燥帯",
+            explanation: "降水量より蒸発量が多く、樹木が育ちにくい気候区分は「乾燥帯」です。"
+        }
+    ];
+}
+
+/**
+ * 5問の練習問題を画面(practice-questions-container)へレンダリング
+ */
+function renderPracticeQuestions(questions) {
+    const container = document.getElementById('practice-questions-container');
+    if (!container) return;
+
+    // 日付の設定
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const dateEl = document.getElementById('practice-date');
+    if (dateEl) dateEl.textContent = `${yyyy}/${mm}/${dd}`;
+
+    // サブタイトルの設定
+    const subTitle = document.getElementById('practice-topic-subtitle');
+    if (subTitle) {
+        subTitle.textContent = `🎯 今回の解説授業で学んだポイントの復習テスト（全5問・各20点）`;
+    }
+
+    // スコアスタンプ非表示＆リセット
+    const scoreDisplay = document.getElementById('practice-score-display');
+    if (scoreDisplay) scoreDisplay.classList.add('hidden');
+
+    const gradeBtn = document.getElementById('grade-practice-btn');
+    const finishBtn = document.getElementById('finish-practice-btn');
+    if (gradeBtn) gradeBtn.classList.remove('hidden');
+    if (finishBtn) finishBtn.classList.add('hidden');
+
+    let html = '';
+
+    questions.forEach((q, idx) => {
+        const qNum = idx + 1;
+        html += `
+            <div class="test-question-item" id="pq-item-${qNum}" style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px dashed #e0e0e0;">
+                <div class="q-title" style="font-size: 1.05rem; font-weight: bold; margin-bottom: 12px; line-height: 1.5;">
+                    <span class="q-num" style="color: #2980b9;">【問 ${qNum}】</span> ${escapeHtml(q.title)} <span class="q-points" style="font-size: 0.85rem; color: #7f8c8d;">（20点）</span>
+                </div>
+        `;
+
+        if (q.type === 'choice' && Array.isArray(q.options)) {
+            html += `<div class="q-answer-area" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; margin-left: 15px;">`;
+            q.options.forEach((opt, optIdx) => {
+                const radioId = `pq_${qNum}_opt_${optIdx}`;
+                html += `
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem; background: rgba(245,247,250,0.8); padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                        <input type="radio" name="pq_ans_${qNum}" id="${radioId}" value="${escapeHtml(opt)}" style="transform: scale(1.1); cursor: pointer;">
+                        <span>${escapeHtml(opt)}</span>
+                    </label>
+                `;
+            });
+            html += `</div>`;
+        } else {
+            // テキスト入力形式
+            html += `
+                <div class="q-answer-area" style="margin-top: 10px; margin-left: 15px;">
+                    答：<input type="text" id="pq_ans_text_${qNum}" placeholder="解答を入力してください" class="q-input-long" style="width: 80%; padding: 8px 12px; font-size: 0.95rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+                </div>
+            `;
+        }
+
+        // フィードバック＆解説エリア（初期非表示）
+        html += `
+                <div class="q-feedback hidden" id="pq-feedback-${qNum}" style="margin-top: 12px; padding: 12px; border-radius: 8px; background: rgba(241, 245, 249, 0.9); border-left: 4px solid #3b82f6;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="grade-mark mark-correct" style="font-size: 1.4rem; font-weight: bold;">◯</span>
+                        <strong style="font-size: 0.95rem;">【正解】: ${escapeHtml(q.answer)}</strong>
+                    </div>
+                    <div class="q-explanation" style="margin-top: 6px; font-size: 0.9rem; color: #334155; line-height: 1.5;">
+                        <strong>【解説】</strong><br>
+                        ${escapeHtml(q.explanation)}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+let lastWakaruAdvice = '';
+
+/**
+ * 練習問題の採点
+ */
+async function gradePracticeTest() {
+    if (!currentPracticeQuestions || currentPracticeQuestions.length === 0) return;
+
+    let totalScore = 0;
+    const resultsSummary = [];
+
+    currentPracticeQuestions.forEach((q, idx) => {
+        const qNum = idx + 1;
+        let userAns = '';
+
+        if (q.type === 'choice') {
+            const selectedRadio = document.querySelector(`input[name="pq_ans_${qNum}"]:checked`);
+            if (selectedRadio) {
+                userAns = selectedRadio.value.trim();
+            }
+        } else {
+            const textInput = document.getElementById(`pq_ans_text_${qNum}`);
+            if (textInput) {
+                userAns = textInput.value.trim();
+            }
+        }
+
+        // 正誤判定（完全一致または部分一致）
+        const isCorrect = checkPracticeAnswer(userAns, q.answer);
+        if (isCorrect) {
+            totalScore += 20;
+        }
+
+        resultsSummary.push({
+            num: qNum,
+            title: q.title,
+            isCorrect: isCorrect,
+            userAns: userAns || '未入力',
+            correctAns: q.answer
+        });
+
+        // フィードバックの表示
+        const feedbackEl = document.getElementById(`pq-feedback-${qNum}`);
+        if (feedbackEl) {
+            feedbackEl.classList.remove('hidden');
+            const markEl = feedbackEl.querySelector('.grade-mark');
+            if (markEl) {
+                if (isCorrect) {
+                    markEl.textContent = '◯';
+                    markEl.className = 'grade-mark mark-correct';
+                    markEl.style.color = '#2ecc71';
+                } else {
+                    markEl.textContent = '✕';
+                    markEl.className = 'grade-mark mark-incorrect';
+                    markEl.style.color = '#e74c3c';
+                }
+            }
+        }
+
+        // 入力を無効化
+        const radios = document.querySelectorAll(`input[name="pq_ans_${qNum}"]`);
+        radios.forEach(r => r.disabled = true);
+        const textInput = document.getElementById(`pq_ans_text_${qNum}`);
+        if (textInput) textInput.readOnly = true;
+    });
+
+    // スコアの表示
+    const scoreVal = document.getElementById('practice-score-val');
+    if (scoreVal) scoreVal.textContent = totalScore;
+
+    const scoreDisplay = document.getElementById('practice-score-display');
+    if (scoreDisplay) scoreDisplay.classList.remove('hidden');
+
+    // ボタン切り替え
+    const gradeBtn = document.getElementById('grade-practice-btn');
+    const finishBtn = document.getElementById('finish-practice-btn');
+    if (gradeBtn) gradeBtn.classList.add('hidden');
+    if (finishBtn) finishBtn.classList.remove('hidden');
+
+    // 🤖 わかるくんからのアドバイスを生成・表示
+    await generateWakaruAdvice(totalScore, resultsSummary);
+}
+
+/**
+ * わかるくんからのアドバイスを生成（15個の設定プロファイル完全反映）
+ */
+async function generateWakaruAdvice(totalScore, resultsSummary) {
+    const adviceBox = document.getElementById('wakaru-advice-box');
+    const adviceTextEl = document.getElementById('wakaru-advice-text');
+    if (!adviceBox || !adviceTextEl) return;
+
+    adviceBox.classList.remove('hidden');
+    adviceTextEl.innerHTML = '<span style="color:#7f8c8d;">🤖 わかるくんがあなたの回答と設定を元にアドバイスを考えています...</span>';
+
+    const apiKey = localStorage.getItem('gemini-api-key');
+    const profilePrompt = buildAISystemPromptProfile();
+
+    let adviceContent = '';
+
+    if (apiKey) {
+        try {
+            const prompt = `あなたはAI学習アシスタント「わかるくん」です。
+ユーザーが練習問題5問を解き終えて採点が完了しました。
+
+【実施結果】
+- 得点: ${totalScore} / 100 点
+- 問題正誤詳細: ${JSON.stringify(resultsSummary)}
+
+${profilePrompt}
+
+【アドバイス作成指示】
+- 設定プロファイルで指定された【口調・トーン・褒め方・長さ・厳しさ・キャラクター性・熱量・例え話】を【100%徹底して表現】してください。
+- 得点（${totalScore}点）に応じた労い、良かった点、間違えた問題の復習アドバイス、次への励ましを親身に記述してください。
+- 150文字〜250文字程度で、読んだユーザーのモチベーションが最高になるアドバイスにしてください。`;
+
+            const contents = [{ role: 'user', parts: [{ text: prompt }] }];
+            const resText = await callGeminiAPI(contents);
+            adviceContent = resText;
+        } catch (e) {
+            console.warn("Geminiによるアドバイス生成に失敗、設定反映型フォールバックアドバイスを使用します:", e);
+            adviceContent = generateFallbackWakaruAdvice(totalScore);
+        }
+    } else {
+        await new Promise(r => setTimeout(r, 600));
+        adviceContent = generateFallbackWakaruAdvice(totalScore);
+    }
+
+    lastWakaruAdvice = adviceContent;
+    adviceTextEl.innerHTML = convertMarkdownToHtml(adviceContent);
+}
+
+/**
+ * 設定反映型フォールバックアドバイス生成
+ */
+function generateFallbackWakaruAdvice(totalScore) {
+    const tone = parseInt(localStorage.getItem('tone-preference') || '50', 10);
+    const praise = parseInt(localStorage.getItem('praise-preference') || '50', 10);
+    const strictness = parseInt(localStorage.getItem('strictness-preference') || '50', 10);
+    const energy = parseInt(localStorage.getItem('energy-preference') || '50', 10);
+
+    const isCasual = tone >= 66;
+    const isHonest = tone <= 35;
+    const isPraise = praise >= 66;
+    const isStrict = strictness >= 66;
+    const isEnergy = energy >= 66;
+
+    let text = "";
+
+    if (isCasual && isEnergy) {
+        text += `練習問題お疲れさま！得点は **${totalScore}点** だよ！🔥\n`;
+        if (totalScore === 100) {
+            text += `全問正解！！すごすぎるぜ！ノートの成果が完璧に出てるね！🎉✨\nこの勢いで次の単元もバリバリ突き進もう！`;
+        } else if (totalScore >= 60) {
+            text += `よく頑張ったね！高得点ゲットだよ！💪\n間違えた問題の解説をしっかりチェックして、次回は満点を狙っちゃおう！`;
+        } else {
+            text += `最後まであきらめずに解ききって燃えたぜ！🔥\n${isStrict ? '悔しい結果だけど甘えは禁物！間違えたところをノートで見直して絶対リベンジしよう！' : '落ち込まなくて大丈夫！間違えた分だけ伸びしろがあるからね！一緒に復習しよう！'}`;
+        }
+    } else if (isHonest) {
+        text += `練習問題5問のお取り組み、誠にお疲れ様でございました。得点は **${totalScore}点** でございます。\n`;
+        if (totalScore >= 80) {
+            text += `大変素晴らしい成果でございます。学習内容がしっかりと定着されておりますね。次回もこの調子で励んでまいりましょう。`;
+        } else {
+            text += `全力を尽くされた姿勢が大変立派でございます。解説をご確認いただき、次回へ向けて復習なさってくださいませ。`;
+        }
+    } else {
+        text += `練習問題お疲れ様でした！今回の得点は **${totalScore}点** です。🤖\n`;
+        if (totalScore >= 80) {
+            text += `${isPraise ? '素晴らしい！大正解連発で完璧ですね！🎉' : 'しっかり理解できていて素晴らしい結果です。'}\n復習を継続して、知識を自分のものにしていきましょう！`;
+        } else {
+            text += `最後まで解ききって素晴らしいチャレンジでした！\n${isStrict ? '間違えた部分は要復習ポイントです！解説を熟読して確実に理解しましょう。' : '間違えた部分も解説を見直せばすぐにできるようになりますよ！応援しています！'}`;
+        }
+    }
+
+    return text;
+}
+
+/**
+ * 解答判定ヘルパー
+ */
+function checkPracticeAnswer(userAns, targetAns) {
+    if (!userAns) return false;
+    const u = userAns.toLowerCase().trim();
+    const t = targetAns.toLowerCase().trim();
+
+    if (u === t) return true;
+    const cleanU = u.replace(/\s+/g, '');
+    const cleanT = t.replace(/\s+/g, '');
+    if (cleanU === cleanT) return true;
+
+    if (cleanT.startsWith(cleanU) || cleanU.startsWith(cleanT)) return true;
+
+    return false;
+}
+
+/**
+ * 練習問題終了・履歴への保存
+ */
+function finishPracticeTest() {
+    saveWakaruSessionAndReturnHome();
+}
+

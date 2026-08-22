@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ジョジョの奇妙な冒険 オールスタンドカードバトル</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="start-screen" class="container">
+        <h1>ジョジョの奇妙な冒険<br>オールスタンドカードバトル</h1>
+        <button id="start-btn" onclick="startGame()">スタート</button>
+    </div>
+
+    <div id="game-screen" class="container" style="display: none;">
+        <h2>カードデッキ</h2>
+        <div id="deck" class="deck">
+            <div class="card">スタープラチナ</div>
+            <div class="card">ザ・ワールド</div>
+            <div class="card">クレイジー・ダイヤモンド</div>
+        </div>
+        <button id="back-btn" onclick="resetGame()">戻る</button>
+    </div>
+
+    <script>
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+        }
+
+        function resetGame() {
+            document.getElementById('start-screen').style.display = 'block';
+            document.getElementById('game-screen').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI学習アシスタント</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 
@@ -26,14 +27,14 @@
                                 <img src="assets/book-image.png" alt="Book" class="action-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                                 <span class="action-icon-styled" style="display:none;">📚</span>
                                 <div class="action-text">
-                                    <h3>復習を<br>はじめる</h3>
+                                    <h3>わかるくんに<br>教えてもらう</h3>
                                 </div>
                             </button>
                             
                             <button class="action-card accent-card" onclick="switchScreen('planner')">
                                 <span class="action-icon-styled">✨</span>
                                 <div class="action-text">
-                                    <h3>AIおすすめ<br>復習プラン</h3>
+                                    <h3>学習プラン</h3>
                                 </div>
                             </button>
 
@@ -48,7 +49,7 @@
 
                     <div class="right-panel">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%;">
-                            <h3 class="panel-subtitle" style="margin-bottom: 0;">📜 最近の学習記録</h3>
+                            <h3 class="panel-subtitle" style="margin-bottom: 0;">📜 学習記録</h3>
                             <a href="record/record.html" style="font-size: 0.88rem; color: var(--accent-blue); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-purple)'" onmouseout="this.style.color='var(--accent-blue)'">すべて表示 ➔</a>
                         </div>
                         
@@ -66,8 +67,10 @@
                             <button class="filter-btn" onclick="filterHistory('英語')">英語</button>
                         </div>
 
-                        <div id="empty-history-message" class="empty-message hidden">
-                            <p>見つかりませんでした。</p>
+                        <div id="empty-history-message" class="empty-message hidden" style="padding: 20px; text-align: center; color: #7f8c8d;">
+                            <span style="font-size: 2.5rem; display: block; margin-bottom: 8px;">📚</span>
+                            <p style="font-weight: 600; margin: 0;">まだ学習記録がありません。</p>
+                            <p style="font-size: 0.85rem; color: #95a5a6; margin-top: 4px;">ノートをカメラで読み込むか、復習問題にチャレンジして記録を増やそう！</p>
                         </div>
 
                         <div id="history-list" class="history-list-container horizontal-scroll">
@@ -92,22 +95,22 @@
                 <div class="ai-stats-row">
                     <div class="stat-box">
                         <span class="stat-label">🚨 苦手度スコア</span>
-                        <span class="stat-value text-red" id="weak-score">78/100</span>
+                        <span class="stat-value text-red" id="weak-score">--/100</span>
                     </div>
                     <div class="stat-box">
                         <span class="stat-label">💡 理解度スコア</span>
-                        <span class="stat-value text-blue" id="understand-score">45%</span>
+                        <span class="stat-value text-blue" id="understand-score">--%</span>
                     </div>
                     <div class="stat-box">
                         <span class="stat-label">🎯 優先弱点単元</span>
-                        <span class="stat-value text-small" id="priority-unit">数学：二次関数</span>
+                        <span class="stat-value text-small" id="priority-unit">学習記録が未登録</span>
                     </div>
                 </div>
 
                 <div class="plan-content-box big-box">
                     <div class="plan-details">
-                        <p class="plan-summary" id="plan-text">【サクッと復習】今日間違えた「二次関数の基礎計算」を1問だけ集中して解き直そう！</p>
-                        <span class="plan-balance" id="plan-balance-tag">⚖︎ 今日の復習 90% : 明日の予習 10%</span>
+                        <p class="plan-summary" id="plan-text">【学習をはじめよう】「わかるくに教えてもらう」でノートを読み込むと、AIが復習プランを自動作成します！</p>
+                        <span class="plan-balance" id="plan-balance-tag">⚖️ 記録待ち</span>
                     </div>
                     <button class="start-plan-btn" onclick="switchScreen('review')">このプランで復習スタート ➔</button>
                 </div>
@@ -168,8 +171,8 @@
                     <div class="test-paper-header">
                         <div class="test-title">実力診断テスト</div>
                         <div class="test-meta">
-                            <span class="meta-field">実施日: <span id="test-date">2026/06/11</span></span>
-                            <span class="meta-field">氏名: <input type="text" value="学習太郎" class="test-name-input"></span>
+                            <span class="meta-field">実施日: <span id="test-date"></span></span>
+                            <span class="meta-field">氏名: <input type="text" placeholder="名前を入力" class="test-name-input" id="test-user-name"></span>
                             <div class="score-display hidden" id="test-score-display">
                                 <span class="score-label">得点</span>
                                 <span class="score-value" id="test-score-val">0</span>
@@ -178,69 +181,19 @@
                         </div>
                     </div>
                     
-                    <div class="test-questions">
-                        <!-- 第1問 -->
-                        <div class="test-question-item">
-                            <div class="q-title">
-                                <span class="q-num">【問 1】</span> 二次関数 <span style="font-family: serif; font-style: italic;">y = x² - 6x + 5</span> の頂点の座標を求めよ。<span class="q-points">（10点）</span>
-                            </div>
-                            <div class="q-answer-area">
-                                答：( <input type="text" id="q1-ans-x" placeholder="x" class="q-input-short"> , <input type="text" id="q1-ans-y" placeholder="y" class="q-input-short"> )
-                            </div>
-                            <div class="q-feedback hidden" id="q1-feedback">
-                                <span class="grade-mark mark-correct">◯</span>
-                                <div class="q-explanation">
-                                    <strong>【解説】</strong><br>
-                                    平方完成を行うと、<br>
-                                    <span style="font-family: serif;">y = (x - 3)² - 9 + 5 = (x - 3)² - 4</span><br>
-                                    となるため、頂点の座標は <strong>(3, -4)</strong> です。
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 第2問 -->
-                        <div class="test-question-item">
-                            <div class="q-title">
-                                <span class="q-num">【問 2】</span> 漢文における「置き字」（「而」「於」など）は、書き下し文にする際、原則としてどのように処理するか答えよ。<span class="q-points">（25点）</span>
-                            </div>
-                            <div class="q-answer-area">
-                                答：<input type="text" id="q2-ans" placeholder="どのように処理するか入力してください" class="q-input-long">
-                            </div>
-                            <div class="q-feedback hidden" id="q2-feedback">
-                                <span class="grade-mark mark-correct">◯</span>
-                                <div class="q-explanation">
-                                    <strong>【解説】</strong><br>
-                                    置き字は文の構造を整える役割を持ちますが、書き下し文では<strong>原則として読まず、書きもしません</strong>（無視して処理します）。
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 第3問 -->
-                        <div class="test-question-item">
-                            <div class="q-title">
-                                <span class="q-num">【問 3】</span> 不規則動詞「go」（行く）の過去形をスペルで答えよ。<span class="q-points">（15点）</span>
-                            </div>
-                            <div class="q-answer-area">
-                                答：<input type="text" id="q3-ans" placeholder="過去形を入力" class="q-input-medium">
-                            </div>
-                            <div class="q-feedback hidden" id="q3-feedback">
-                                <span class="grade-mark mark-correct">◯</span>
-                                <div class="q-explanation">
-                                    <strong>【解説】</strong><br>
-                                    「go」の過去形は <strong>went</strong> です（過去分詞は gone）。
-                                </div>
-                            </div>
-                        </div>
+                    <div class="test-questions" id="test-questions-container">
+                        <!-- 動的にテスト問題が生成・表示されます -->
                     </div>
 
                     <!-- アクションエリア -->
-                    <div class="test-actions">
-                        <button class="start-plan-btn" id="grade-test-btn" onclick="gradeTest()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);">📝 採点する</button>
-                        <button class="start-plan-btn hidden" id="finish-test-btn" onclick="finishTest()" style="background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 12px rgba(46, 204, 113, 0.25);">🎯 結果を記録して終了</button>
+                    <div class="test-actions" style="display: flex; gap: 15px; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15);">
+                        <button class="back-button" id="test-abort-btn" onclick="switchScreen('test')" style="margin: 0;">🏠 戻る</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="start-plan-btn" id="grade-test-btn" onclick="gradeTest()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);">📝 採点する</button>
+                            <button class="start-plan-btn hidden" id="finish-test-btn" onclick="finishTestSessionAndSave()" style="background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 12px rgba(46, 204, 113, 0.25);">🎯 結果を記録してホームへ戻る</button>
+                        </div>
                     </div>
                 </div>
-                
-                <button class="back-button" id="test-abort-btn" onclick="switchScreen('test')" style="margin-top: 25px; align-self: center;">🏠 戻る</button>
             </div>
         </div>
 
@@ -290,9 +243,57 @@
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 15px; width: 100%; justify-content: flex-end; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.06);">
+                <div style="display: flex; gap: 12px; width: 100%; justify-content: flex-end; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.06); flex-wrap: wrap;">
                     <button class="back-button" onclick="switchScreen('review')" style="background: rgba(255, 255, 255, 0.6);">📷 写真を選び直す</button>
-                    <button class="start-plan-btn" onclick="finishReviewAndSave()" style="background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 12px rgba(46, 204, 113, 0.25);">🎯 復習を完了してホームへ</button>
+                    <button class="start-plan-btn" onclick="goToPracticeQuestions()" style="background: linear-gradient(135deg, #3498db, #2980b9); box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);">🎯 練習問題に挑戦する</button>
+                    <button class="start-plan-btn" onclick="saveWakaruSessionAndReturnHome()" style="background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 12px rgba(46, 204, 113, 0.25);">💾 授業を完了してホームへ戻る</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎯 ピンポイント練習問題用紙画面 -->
+        <div id="practice-paper-screen" class="screen">
+            <div class="glass-card" style="justify-content: flex-start; overflow-y: auto; padding: 25px;">
+                <div class="test-paper">
+                    <div class="test-paper-header">
+                        <div>
+                            <div class="test-title">🎯 ピンポイント練習問題（全5問）</div>
+                            <div id="practice-topic-subtitle" style="font-size: 0.9rem; color: #546e7a; margin-top: 4px; font-family: sans-serif; font-weight: 600;">出題元：学習したノート・解説内容より</div>
+                        </div>
+                        <div class="test-meta">
+                            <span class="meta-field">実施日: <span id="practice-date"></span></span>
+                            <span class="meta-field">氏名: <input type="text" placeholder="名前を入力" class="test-name-input" id="practice-user-name"></span>
+                            <div class="score-display hidden" id="practice-score-display">
+                                <span class="score-label">得点</span>
+                                <span class="score-value" id="practice-score-val">0</span>
+                                <span class="score-total">/100</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="test-questions" id="practice-questions-container">
+                        <!-- 動的に5問生成・挿入されます -->
+                    </div>
+
+                    <!-- 🤖 わかるくんからのアドバイスエリア (採点後に表示) -->
+                    <div id="wakaru-advice-box" class="hidden" style="margin-top: 25px; padding: 20px; border-radius: 16px; background: linear-gradient(135deg, rgba(235, 245, 255, 0.95), rgba(240, 235, 255, 0.95)); border: 2px solid var(--accent-purple); box-shadow: 0 4px 15px rgba(155, 89, 182, 0.15);">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.8rem;">🤖</span>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--accent-purple); margin: 0;">わかるくんからのアドバイス</h3>
+                        </div>
+                        <div id="wakaru-advice-text" style="font-size: 0.95rem; color: #2c3e50; line-height: 1.6; font-family: sans-serif;">
+                            <!-- AIによるアドバイスが動的に生成されます -->
+                        </div>
+                    </div>
+
+                    <!-- アクションエリア -->
+                    <div class="test-actions" style="display: flex; gap: 15px; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15);">
+                        <button class="back-button" onclick="switchScreen('ai-response')" style="margin: 0; background: rgba(230, 230, 230, 0.8);">↩️ 解説授業に戻る</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="start-plan-btn" id="grade-practice-btn" onclick="gradePracticeTest()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);">📝 採点する</button>
+                            <button class="start-plan-btn hidden" id="finish-practice-btn" onclick="saveWakaruSessionAndReturnHome()" style="background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 12px rgba(46, 204, 113, 0.25);">🎯 授業と練習結果を保存してホームへ</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -310,7 +311,7 @@
                             <img id="history-chat-image" src="" alt="ノートプレビュー" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                             <div id="history-chat-placeholder" class="hidden" style="font-size: 5rem; text-align: center;">📊</div>
                         </div>
-                        <span id="history-chat-date" style="font-size: 0.85rem; color: #7f8c8d; text-align: center; font-weight: 600; margin-top: 5px;">学習日：2026/06/05</span>
+                        <span id="history-chat-date" style="font-size: 0.85rem; color: #7f8c8d; text-align: center; font-weight: 600; margin-top: 5px;"></span>
                     </div>
 
                     <!-- 右側：会話履歴エリア -->
@@ -360,91 +361,253 @@
                         <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
                             <label for="gemini-model-select" style="font-size: 0.9rem; font-weight: 600; color: #546e7a; white-space: nowrap;">使用モデル:</label>
                             <select id="gemini-model-select" style="padding: 8px 12px; border-radius: 10px; border: 1px solid var(--glass-border); font-size: 0.9rem; outline: none; background: white; flex: 1;">
-                                <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
                                 <option value="gemini-2.0-flash">gemini-2.0-flash (最新・高精度)</option>
+                                <option value="gemini-1.5-flash">gemini-1.5-flash (軽量・高速)</option>
                                 <option value="gemini-1.5-pro">gemini-1.5-pro (高度な推論・分析)</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- セクション：デザインの好み（派手か静かか） -->
-                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
-                        <label for="design-preference-slider" style="font-size: 1.15rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
-                            🎨 好みのデザインや雰囲気（派手か静かか）
+                    <!-- セクション：データのリセット -->
+                    <div class="settings-section" style="background: rgba(231, 76, 60, 0.08); border: 2px dashed #e74c3c; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                        <label style="font-size: 1.05rem; font-weight: 700; color: #c0392b; display: flex; align-items: center; gap: 8px;">
+                            🗑️ 学習データの完全初期化（リセット）
                         </label>
-                        <p style="color: #546e7a; font-size: 0.88rem; line-height: 1.5; margin: 0;">
-                            身の回りのモノやデザインについて、華やかで活気のあるものと、落ち着いた静かなもののどちらが好みですか？
-                        </p>
-                        
-                        <div class="slider-wrapper" style="margin-top: 10px; width: 100%;">
+                        <p style="color: #546e7a; font-size: 0.85rem; margin: 0;">保存されているすべての学習記録・履歴データを完全に削除して一新します。</p>
+                        <button class="start-plan-btn" onclick="confirmResetAllData()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); width: fit-content; padding: 10px 20px;">全学習記録を消去して初期化</button>
+                    </div>
+
+                    <!-- セクション 1：デザインの好み（派手か静かか） -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="design-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            1. 🎨 好みのデザインや雰囲気
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">落ち着いたシックなデザインか、華やかでカラフルなデザインかを選択します。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
                             <input type="range" id="design-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
-                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.9rem; font-weight: 600; color: #546e7a;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
                                 <span>静か・シンプル</span>
                                 <span>派手・カラフル</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- セクション：興味の対象（インドアかアウトドアか） -->
-                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
-                        <label for="activity-preference-slider" style="font-size: 1.15rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
-                            ⛺ 興味のあるジャンル（インドアかアウトドアか）
+                    <!-- セクション 2：興味の対象 -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="activity-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            2. ⛺ 興味のあるジャンル
                         </label>
-                        <p style="color: #546e7a; font-size: 0.88rem; line-height: 1.5; margin: 0;">
-                            AIが日常会話や勉強の例え話を出す際に役立ちます。読書やゲームなどのインドア派か、スポーツや旅行などのアウトドア派かを選択してください。
-                        </p>
-                        
-                        <div class="slider-wrapper" style="margin-top: 10px; width: 100%;">
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">日常会話や例え話に使う趣味（インドア：読書/ゲーム ↔ アウトドア：スポーツ/旅行）。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
                             <input type="range" id="activity-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
-                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.9rem; font-weight: 600; color: #546e7a;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
                                 <span>インドア派</span>
                                 <span>アウトドア派</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- セクション：モチベーションのタイプ -->
-                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
-                        <label for="motivation-preference-slider" style="font-size: 1.15rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
-                            🔥 モチベーションが高まるスタイル
+                    <!-- セクション 3：モチベーションタイプ -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="motivation-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            3. 🔥 モチベーションが高まるスタイル
                         </label>
-                        <p style="color: #546e7a; font-size: 0.88rem; line-height: 1.5; margin: 0;">
-                            自分のペースでじっくり黙々と進めたいタイプか、競争やゲーム感覚で目標をクリアして進めたいタイプかを選択してください。
-                        </p>
-                        
-                        <div class="slider-wrapper" style="margin-top: 10px; width: 100%;">
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">自分のペースで進めるか、ゲーム感覚やスコア獲得で燃えるかを選択します。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
                             <input type="range" id="motivation-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
-                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.9rem; font-weight: 600; color: #546e7a;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
                                 <span>マイペース型</span>
                                 <span>競争・ゲーム型</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- セクション：学習時のアプローチ -->
-                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
-                        <label for="learning-style-slider" style="font-size: 1.15rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
-                            🧠 新しいことを学ぶときのアプローチ
+                    <!-- セクション 4：学習のアプローチ -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="learning-style-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            4. 🧠 新しいことを学ぶときのアプローチ
                         </label>
-                        <p style="color: #546e7a; font-size: 0.88rem; line-height: 1.5; margin: 0;">
-                            最初に全体の仕組みや理論をじっくり納得するまで学びたいか、まずは実際に問題を解いたり手を動かしてみたいかを選択してください。
-                        </p>
-                        
-                        <div class="slider-wrapper" style="margin-top: 10px; width: 100%;">
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">理論や仕組みをじっくり納得するまで聴くか、まず問題を解いてみるか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
                             <input type="range" id="learning-style-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
-                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.9rem; font-weight: 600; color: #546e7a;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
                                 <span>じっくり理解型</span>
                                 <span>まずやってみる型</span>
                             </div>
                         </div>
                     </div>
 
+                    <!-- セクション 5：AIの口調・トーン -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="tone-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            5. 🗣️ AIの話し方・口調
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">礼儀正しい丁寧な敬語か、親しみやすいフレンドリーなタメ口か。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="tone-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>超丁寧・敬語</span>
+                                <span>フレンドリー・タメ口</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 6：褒め方の強さ -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="praise-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            6. 👏 褒め方の強さ・テンション
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">正解や頑張りを静かに認めるか、ハイテンションで「天才！大正解！」と褒めちぎるか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="praise-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>優しく穏やか</span>
+                                <span>ハイテンション大絶賛</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 7：解説の長さ -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="length-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            7. 📏 解説・アドバイスの長さ
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">短く要点だけをスッキリまとめるか、背景や補足を含めて手厚く解説するか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="length-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>要点のみ簡潔</span>
+                                <span>詳しく丁寧</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 8：例え話の多さ -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="analogy-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            8. 💡 例え話・具体例の多さ
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">教科書通りの正確な説明か、身の回りの例え話やたとえ表現をたくさん入れるか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="analogy-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>厳密・教科書的</span>
+                                <span>例え話・具体例多め</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 9：アドバイスの難易度レベル -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="difficulty-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            9. ⚙️ アドバイス・発展難易度
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">基礎の確認に集中するか、応用・発展問題や深い裏知識まで踏み込むか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="difficulty-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>基礎重視・優しめ</span>
+                                <span>応用・発展チャレンジ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 10：AIのキャラクター性 -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="character-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            10. 🤖 わかるくんのキャラクター性
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">しっかり指導してくれる頼れる先生役か、隣で一緒に悩んで学ぶ友達・相棒役か。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="character-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>頼れる先生風</span>
+                                <span>一緒に頑張る友達風</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 11：問いかけの頻度 -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="interaction-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            11. 💬 問いかけ・対話の積極性
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">AIから一方的に解説するスタイルか、「どう思う？」とクイズや質問を投げかけるか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="interaction-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>静かに解説</span>
+                                <span>質問・クイズ多め</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 12：アドバイスの厳しさ -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="strictness-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            12. ⚡ 指導・アドバイスの厳しさ
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">間違いを全肯定して包み込む甘口か、弱点をズバッと指摘して発破をかける熱血スパルタか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="strictness-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>励まし・甘口</span>
+                                <span>的確指摘・スパルタ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 13：ヒントの出し方 -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="hint-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            13. 🧩 思考のヒントの出し方
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">正解や解法をすぐ提示するか、ヒントを与えて自分で考えさせるか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="hint-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>答えを直球提示</span>
+                                <span>段階的なヒント出し</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 14：学習ペース配分 -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="pace-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            14. ⏱️ テンポ・学習スピード感
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">のんびり着実に一歩ずつ確認するか、サクサク高速スピードでどんどん進むか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="pace-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>のんびりコツコツ</span>
+                                <span>テキパキハイスピード</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- セクション 15：キャラクターの熱量・エネルギッシュ度 -->
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="energy-preference-slider" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                            15. 🌟 わかるくんの熱量・エネルギー
+                        </label>
+                        <p style="color: #546e7a; font-size: 0.85rem; line-height: 1.4; margin: 0;">クールで落ち着いた知性派タイプか、パッション溢れる熱血エネルギッシュタイプか。</p>
+                        <div class="slider-wrapper" style="width: 100%;">
+                            <input type="range" id="energy-preference-slider" min="1" max="100" value="50" class="premium-slider" style="width: 100%;">
+                            <div class="slider-labels" style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: #546e7a;">
+                                <span>クール・落ち着き</span>
+                                <span>熱血エネルギッシュ</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- セクション：その他の好みや興味、得意なもの -->
-                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
-                        <label for="other-preferences" style="font-size: 1.15rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                    <div class="settings-section" style="background: rgba(255, 255, 255, 0.5); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
+                        <label for="other-preferences" style="font-size: 1.05rem; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
                             📝 ここに他の自分の好きなものや興味、得意なものを書いてください
                         </label>
-                        <textarea id="other-preferences" placeholder="例：歴史小説を読むのが好き、プログラミングが得意、サッカーチームに所属している、科学館によく行く、など自由に記入してください" style="width: 100%; min-height: 120px; padding: 15px; border-radius: 14px; border: 1px solid var(--glass-border); outline: none; background: rgba(255,255,255,0.7); font-size: 0.92rem; color: var(--text-color); line-height: 1.6; resize: vertical; box-sizing: border-box;"></textarea>
+                        <textarea id="other-preferences" placeholder="例：歴史小説を読むのが好き、プログラミングが得意、サッカーチームに所属している、科学館によく行く、など自由に記入してください" style="width: 100%; min-height: 100px; padding: 12px; border-radius: 14px; border: 1px solid var(--glass-border); outline: none; background: rgba(255,255,255,0.7); font-size: 0.9rem; color: var(--text-color); line-height: 1.5; resize: vertical; box-sizing: border-box;"></textarea>
                     </div>
 
                     <!-- 保存アクション -->
