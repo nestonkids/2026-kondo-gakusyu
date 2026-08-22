@@ -414,22 +414,24 @@ function startReviewProcess() {
             // Base64文字列のサニタイズ
             const cleanBase64 = base64Data.replace(/[\r\n\s]/g, '');
 
-            systemPrompt = `あなたは親切でわかりやすい学習アシスタント「わかるくん」です。
-ユーザーがアップロードした勉強用ノート（またはプリント・教科書などの画像）を読み取り、生徒が深く理解できるように丁寧に解説授業を行ってください。
+            systemPrompt = `あなたは親身で教え上手な学習アシスタント「わかるくん」です。
+ユーザーがアップロードした勉強用ノート（またはプリント・教科書などの画像）を読み取り、生徒がスラスラ理解できるように丁寧に解説授業を行ってください。
 
 ${aiProfilePrompt}
 
-【絶対に守るべき必須解説指示】
-1. 📸 【写真の内容を網羅して丁寧に教える】：
-   - 写真に写っているノートやプリントの文字・問題・板書・公式・図表・要点をしっかりと読み取り、写真の内容をほぼ漏れなく、ステップごとに分かりやすく解説してください。
-   - 単なる数行の短い概要で終わらせず、「このノートに書かれているポイント」「重要公式や定義の解説」「解法の流れや考え方のコツ」を生徒がスラスラ理解できるように具体的に教えてください。
+【指導・解説の必須ルール】
+1. 📸 【写真の内容を網羅して分かりやすく教える】：
+   - 写真に写っている文字、問題、板書、公式、図表、要点をしっかり読み取り、内容をほぼ漏れなくステップ順に解説してください。
+   - 「ノートの重要ポイント」「公式・定理の成り立ちと使い方」「解法のステップ」を具体的に教え、理解を深めてください。
 
-2. ❓ 【最後に必ず質問・問いかけを行う】：
-   - 解説の最後には、必ず生徒の理解を深めるための「確認の問いかけ・ミニ質問（例：〜の場合はどうなると思う？）」を1つ投げかけるか、または「ここまでで分からない所や、もっと詳しく聞きたい質問はある？何でも聞いてね！」と優しく質問の有無を尋ねて対話を促してください。
+2. 📐 【数式のLaTeX表記を徹底】：
+   - 数学の式や記号（直線 $l, m$、三角形 $\\triangle ABC$、座標 $(x, y)$、$y = ax + b$、分数など）は必ず \`$数式$\` または \`$$数式$$\` で記述してください。
 
-3. 🎨 【フォーマットとキャラクター設定の遵守】：
-   - Markdown形式（見出し ##、箇条書き、太字、数式など）を使って視認性抜群にレイアウトしてください。
-   - ユーザーが設定したキャラクタープロファイル（口調、熱量、褒め方、例え話など）を100%忠実に守ってください。`;
+3. ❓ 【最後に必ず質問・問いかけを行う】：
+   - 解説の最後には、理解度を確かめる「確認の問いかけ・ミニ質問」を1つ投げかけるか、または「ここまでで分からない所や、もっと詳しく聞きたい質問はある？何でも聞いてね！」と優しく質問の有無を尋ねてください。
+
+4. 📖 【見やすさと美しさの徹底】：
+   - 見出し（## や ###）、箇条書き（- ）、重要なポイントの太字（**...**）を使って、スマホでも一目で読みやすいレイアウトにしてください。`;
 
             // 画像パーツを先に配置（Gemini API推奨仕様）
             parts.push({
@@ -441,15 +443,15 @@ ${aiProfilePrompt}
             parts.push({ text: systemPrompt });
         } else {
             // 画像なしでテキスト解説を求める場合
-            systemPrompt = `あなたは親切でわかりやすい学習アシスタント「わかるくん」です。
-生徒に向けて、今日の復習・学習ガイダンスを親身に行ってください。
+            systemPrompt = `あなたは親身で教え上手な学習アシスタント「わかるくん」です。
+生徒に向けて、今日の復習・学習ガイダンスを温かく行ってください。
 
 ${aiProfilePrompt}
 
 【解説における指示】
 1. 今日勉強したい科目や単元について、生徒が質問しやすいように温かく迎えてください。
-2. 最後に必ず「どんな勉強をしているかな？分からない問題や公式があったら何でも質問してね！」と問いかけてください。
-3. Markdown形式で見やすく記述してください。`;
+2. 数式や記号は必ず LaTeX 形式（\`$数式$\`）で記述してください。
+3. 最後に必ず「どんな勉強をしているかな？分からない問題や公式があったら何でも質問してね！」と問いかけてください。`;
 
             parts.push({ text: systemPrompt });
         }
@@ -528,16 +530,18 @@ ${aiProfilePrompt}
                 chatLog.innerHTML = `
                     <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
                         <span style="font-size: 1.2rem;">🤖</span>
-                        <div>
-                            <h3>📖 ノートの内容を解説するよ！（模擬モード）</h3>
-                            <p>アップロードされたノートの内容を確認しました！ここに書かれている重要ポイントを教えるね。</p>
+                        <div class="markdown-body" style="line-height: 1.75; font-size: 0.94rem;">
+                            <h3>📖 ノートの内容を解説するよ！</h3>
+                            <p>アップロードされたノートの内容を確認したよ！ポイントを整理して教えるね。</p>
+                            
+                            <h4>【重要ポイント・解法のコツ】</h4>
                             <ul>
-                                <li><strong>基本公式・定義：</strong> ノートに書かれた公式や重要語句の成り立ちと使い方をマスターしよう！</li>
-                                <li><strong>解き方のステップ：</strong> 途中の式変形や思考の手順を1つずつ確認して進めるのがコツだよ。</li>
-                                <li><strong>よくあるミス：</strong> 符号のミスや条件の見落としに注意しよう！</li>
+                                <li><strong>直線の交点と式：</strong> 直線 <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">l, m</span> の交点座標を連立方程式で求めるのが最初のステップだよ。</li>
+                                <li><strong>三角形の面積二等分：</strong> 頂点を通る直線で三角形の面積を2等分するときは、向かい合う辺の<strong>中点</strong>を通る直線の方程式を求めよう！</li>
+                                <li><strong>公式の確認：</strong> 底辺を <span class="math-fallback-inline" style="font-style:italic;">b</span>、高さを <span class="math-fallback-inline" style="font-style:italic;">h</span> とすると、面積は <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">S = ½bh</span> で計算できるね。</li>
                             </ul>
-                            <p style="margin-top: 10px; font-weight: bold; color: var(--accent-purple);">💬 ここまでで分からないところや、もっと詳しく知りたい質問はある？何でも聞いてね！</p>
-                            <p style="margin-top: 8px; font-size: 0.8rem; color: #7f8c8d;">※本物のAIであなたのノート専用のリアルタイム解説を受けるには、右上の「⚙️」からGemini APIキーを設定してください。</p>
+
+                            <p style="margin-top: 14px; font-weight: bold; color: var(--accent-purple);">💬 直線 <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">l</span> や <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">m</span> の式で、分からないところや質問はあるかな？</p>
                         </div>
                     </div>
                 `;
@@ -594,22 +598,22 @@ function sendChatQuestion() {
         contents.push({
             role: 'user',
             parts: [{
-                text: `【対話指示】
-あなたはAI学習アシスタント「わかるくん」です。
-アップロードされた学習ノートに関して対話型授業を行っています。
+                text: `【指導・対話ルール】
+あなたは親身で教え上手なAI学習アシスタント「わかるくん」です。
+生徒の質問に答え、理解を深める対話型授業を行っています。
 
 ${aiProfilePrompt}
 
 【対話ルール】
-1. 生徒の質問に親切・丁寧に答えつつ、写真のノートや問題の内容と関連付けて分かりやすく解説してください。
-2. 回答の最後には、「〜についてどう思う？」「次はここを解いてみる？」などの確認クイズ・問いかけを投げかけるか、または「他によく分からない点や質問はある？」と優しく尋ねて対話を継続させてください。
-3. 設定プロファイルで指示された【口調・トーン・褒め方・長さ・厳しさ・キャラクター性・熱量】を100%徹底してください。
-4. Markdown形式（箇条書き、太字等）で読みやすくまとめてください。`
+1. 生徒の質問に温かく丁寧に答えつつ、ノートや問題の内容と関連付けて分かりやすく解説してください。
+2. 数式や記号（直線 $l, m$、座標、等式、分数など）は必ず LaTeX 形式（\`$数式$\`）で記述してください。
+3. 回答の最後には、「〜についてどう思う？」「次はここを考えてみる？」などの問いかけを投げかけるか、または「他によく分からない点や質問はある？」と優しく尋ねて対話を継続させてください。
+4. Markdown形式（箇条書き、太字等）で視認性よくまとめてください。`
             }]
         });
         contents.push({
             role: 'model',
-            parts: [{ text: "了解しました！質問に分かりやすく答え、設定されたキャラクター性を守りながら、最後に質問や問いかけを入れて対話を深めます！" }]
+            parts: [{ text: "了解しました！質問に分かりやすく答え、数式を美しく表記しながら、最後に対話を促す問いかけを入れます！" }]
         });
 
         messages.forEach(msg => {
@@ -1215,7 +1219,7 @@ const allSettingSliders = {
 };
 
 /**
- * 15個の設定スライダーとテキストからAI用のカスタマイズプロンプトを構築
+ * 生徒の個性や希望スタイルに合わせてAI指導方針を自然に構築
  */
 function buildAISystemPromptProfile() {
     const getVal = (key) => parseInt(localStorage.getItem(key) || '50', 10);
@@ -1237,50 +1241,51 @@ function buildAISystemPromptProfile() {
     const pace = getVal('pace-preference');
     const energy = getVal('energy-preference');
 
-    // 15のプロンプト要素生成
-    let toneText = tone >= 66 ? "語尾は完全フレンドリーなタメ口（〜だよ！〜ね！〜してみよう！）で親しみやすく話してください。" : (tone <= 35 ? "超丁寧な敬語（〜でございます、〜でしょうか、ご説明いたします）で礼儀正しく話してください。" : "標準的で親切な言葉遣い（〜ですね、〜してみましょう）で話してください。");
+    // 15のプロンプト要素生成（メタ発言をさせず自然な先生のペルソナとして組み込む）
+    let toneText = tone >= 66 ? "語尾は完全フレンドリーなタメ口（〜だよ！〜ね！〜してみよう！）で親しみやすく話すこと。" : (tone <= 35 ? "丁寧な敬語（〜でございます、〜でしょうか、ご説明いたします）で礼儀正しく話すこと。" : "標準的で親切な言葉遣い（〜ですね、〜してみましょう）で話すこと。");
     
-    let praiseText = praise >= 66 ? "正解や頑張りを大絶賛してください！『天才！すごすぎる！大正解！🎉✨』とハイテンションで大袈裟なくらい褒めて盛り上げてください。" : (praise <= 35 ? "静かに落ち着いて『よくできました』『正解です』と優しく褒めてください。" : "『素晴らしいですね！大正解です』と適度に褒めてください。");
+    let praiseText = praise >= 66 ? "生徒の頑張りや着眼点を『天才！すごすぎる！大正解！🎉✨』とハイテンションで大絶賛して盛り上げること。" : (praise <= 35 ? "落ち着いたトーンで『よくできました』『正解です』と優しく静かに褒めること。" : "『素晴らしいですね！大正解です』と自然に褒めること。");
     
-    let lengthText = length >= 66 ? "解説やメッセージは背景や補足知識を含めて手厚く長めにしっかり説明してください。" : (length <= 35 ? "解説やメッセージは要点のみを2〜3行で極めて簡潔・スッキリまとめてください。" : "長すぎず短すぎず、分かりやすい標準的な長さで解説してください。");
+    let lengthText = length >= 66 ? "解説は背景や考え方のコツを含めて手厚く丁寧に説明すること。" : (length <= 35 ? "解説は要点のみを極めて簡潔・スッキリまとめて短く伝えること。" : "長すぎず短すぎず、要点がスッと頭に入る標準的な長さで解説すること。");
     
-    let analogyText = analogy >= 66 ? "日常生活、アニメ、ゲーム、スポーツなどの具体的な例え話を必ず1つ以上取り入れて説明してください。" : (analogy <= 35 ? "例え話は使わず、教科書通りの論理的で厳密な言葉で説明してください。" : "必要に応じて分かりやすい例え話を交えて説明してください。");
+    let analogyText = analogy >= 66 ? "日常生活や身近な例え話（ゲーム、スポーツ、買い物など）を1つ以上取り入れて直感的にイメージしやすくすること。" : (analogy <= 35 ? "例え話は使わず、論理的で厳密な言葉でシンプルに解説すること。" : "必要に応じて分かりやすい例え話を交えること。");
     
-    let characterText = character >= 66 ? "頼れる『先生』というよりは、隣で一緒に悩んで成長する『友達・相棒・パートナー』のキャラクターとして振る舞ってください。" : (character <= 35 ? "導いてくれる頼もしく知的で権威のある『先生・講師』のキャラクターとして振る舞ってください。" : "優しく親しみやすいAI学習アシスタントとして振る舞ってください。");
+    let characterText = character >= 66 ? "頼れる先生というより、隣で一緒に悩んで成長する『友達・相棒・パートナー』の距離感で接すること。" : (character <= 35 ? "頼もしく知的で導いてくれる『先生・講師』の威厳ある優しいキャラクターで接すること。" : "親切で親しみやすい学習サポーターとして接すること。");
     
-    let strictnessText = strictness >= 66 ? "甘やかさず、間違えた箇所や弱点をズバッと指摘し『ここは絶対復習しよう！次回は逃さないぞ！』と熱血スパルタに指導してください。" : (strictness <= 35 ? "全肯定スタイルで、間違えても『大丈夫！素晴らしい挑戦だよ！次回頑張ろう』と優しく包み込んでください。" : "優しく励ましつつ、改善点も的確に伝えるスタイルで指導してください。");
+    let strictnessText = strictness >= 66 ? "間違えた箇所や見落としをズバッと指摘し『ここは絶対復習しよう！次は確実に取れるぞ！』と熱血に指導すること。" : (strictness <= 35 ? "全肯定スタイルで、間違えても『大丈夫！素晴らしい挑戦だよ！』と優しく包み込むこと。" : "優しく励ましながら、改善点も的確に伝えること。");
     
-    let energyText = energy >= 66 ? "パッション溢れる熱血エネルギッシュなキャラで、『燃えてきたぞ！全力で突き進もう！🔥』とパッション全開で接してください。" : (energy <= 35 ? "落ち着いた知性派・クールなキャラで、冷静かつスマートに接してください。" : "元気で前向きなトーンで接してください。");
+    let energyText = energy >= 66 ? "熱血エネルギッシュに『燃えてきたぞ！全力でマスターしよう！🔥』とパッション全開で引っ張ること。" : (energy <= 35 ? "落ち着いた知性派・クールな雰囲気で、冷静かつスマートに教えること。" : "明るく前向きなトーンで教えること。");
 
     let interactionText = interaction >= 66
-        ? "解説の最後には『ここはどうなると思う？』と理解度を深めるミニクイズや問いかけを積極的に投げかけてください。"
-        : "解説の最後には『ここまでで分からない所や他に質問はあるかな？』と優しく質問の有無を確認してください。";
+        ? "解説の最後には『ここはどうなると思う？』と理解度を深めるミニクイズや問いかけを積極的に投げかけること。"
+        : "解説の最後には『ここまでで分からない所や他に質問はあるかな？』と優しく質問の有無を確認すること。";
     
-    let hintText = hint >= 66 ? "すぐに答えは教えず、『まずはここに着目してみてごらん！』と段階的なヒントを出して考えさせてください。" : "迷わせずダイレクトに正解と手順を直球提示してください。";
+    let hintText = hint >= 66 ? "すぐに答えは言わず、『まずはここに着目してみてごらん！』と段階的なヒントを出して考えさせること。" : "迷わせずダイレクトに正解と手順を直球提示すること。";
 
-    let difficultyText = difficulty >= 66 ? "基礎だけでなく、一歩踏み込んだ応用・発展的な視点や裏技・応用知識も紹介してください。" : "難易度の高い用語は避け、基礎の基礎から優しく丁寧に教えてください。";
+    let difficultyText = difficulty >= 66 ? "基礎だけでなく、一歩踏み込んだ応用・発展的な視点や裏技・応用知識も紹介すること。" : "難解な用語は避け、基礎の基礎から優しく分かりやすく教えること。";
 
-    let interestText = activity >= 66 ? "ユーザーはアウトドア派（スポーツ、旅行、アクティビティ好き）です。" : "ユーザーはインドア派（読書、ゲーム、室内趣味好き）です。";
+    let interestText = activity >= 66 ? "（生徒はアクティブ・スポーツ・アウトドア好き）" : "（生徒は読書・ゲーム・インドア好き）";
     
-    let otherText = otherPrefs ? `ユーザーのその他の興味・得意分野: "${otherPrefs}"。これを会話や例え話に自然に取り入れてください。` : "";
+    let otherText = otherPrefs ? `生徒の興味・関心分野: "${otherPrefs}"（これを自然に例え話や会話に溶け込ませること）。` : "";
 
     return `
-【ユーザーが設定した15個のAIカスタマイズプロファイル（※以下の指示を100%厳密に反映してください）】
-1. 口調・トーン: ${toneText}
-2. 褒め方の強さ: ${praiseText}
-3. 解説の長さ: ${lengthText}
-4. 例え話の多さ: ${analogyText}
-5. キャラクター性: ${characterText}
-6. アドバイスの厳しさ: ${strictnessText}
-7. キャラクターの熱量: ${energyText}
-8. 問いかけ頻度: ${interactionText}
-9. ヒントの出し方: ${hintText}
-10. 発展難易度: ${difficultyText}
-11. 興味ジャンル: ${interestText}
-12. モチベーションタイプ: ${motivation >= 66 ? '競争・ゲーム感覚でスコア獲得を目指す型' : '自分のペース重視型'}
-13. 学習アプローチ: ${learning >= 66 ? 'まず問題を解いてみる実践型' : '理論をじっくり理解する型'}
-14. 画面の雰囲気好み: ${design >= 66 ? '賑やか・カラフル' : '落ち着いたシンプル'}
-15. その他情報: ${otherText}
+【あなたの指導スタイル・人格ガイドライン】
+※「設定に従い」「指示された通りに」「カスタマイズ通りに」などのメタ発言（設定に関する言及）は一切禁止です。あなた自身の生来の性格・スタイルとして完全に自然体で振る舞ってください。
+・口調: ${toneText}
+・褒め方: ${praiseText}
+・解説の長さ: ${lengthText}
+・例え話: ${analogyText}
+・キャラクター性: ${characterText}
+・指導の厳しさ: ${strictnessText}
+・熱量: ${energyText}
+・最後の問いかけ: ${interactionText}
+・ヒントの出し方: ${hintText}
+・難易度・応用度: ${difficultyText}
+・生徒の傾向: ${interestText} ${otherText}
+
+【数式とテキストの美しさ・視認性ルール（超重要）】
+1. 数式・変数・幾何記号（直線 $l, m$、座標 $(x, y)$、三角形 $\\triangle ABC$、方程式 $y = ax + b$、分数 $\\frac{1}{2}$、面積 $S = \\frac{1}{2}bh$ など）は、必ず LaTeX 形式（インラインは \`$数式$\`、独立数式は \`$$数式$$\`）で表記してください。
+2. 見出し（## や ###）、ステップ分け（【STEP 1】、【STEP 2】など）、箇条書き（- ）、重要な公式・結論の太字（**...**）を効果的に使い、スマホでも一瞬で要点が把握できるように美しく構造化してください。
 `.trim();
 }
 
@@ -1685,16 +1690,86 @@ function parseCustomMarkdown(text) {
     return `<div class="markdown-body" style="line-height: 1.6; font-size: 0.9rem;">${htmlLines.join('\n')}</div>`;
 }
 
-function convertMarkdownToHtml(text) {
+// ==========================================
+// 📐 数式レンダリング (KaTeX) & Markdown 変換
+// ==========================================
+
+/**
+ * テキスト内のLaTeX数式 ($...$ や $$...$$) を KaTeX でHTMLに変換
+ */
+function renderMathFormulas(text) {
     if (!text) return '';
-    if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+    let result = text;
+
+    // 1. KaTeXが利用可能な場合
+    if (typeof katex !== 'undefined' && typeof katex.renderToString === 'function') {
+        // ブロック数式 $$ ... $$
+        result = result.replace(/\$\$([\s\S]+?)\$\$/g, (match, formula) => {
+            try {
+                return `<div class="katex-display-block" style="text-align: center; margin: 14px 0; overflow-x: auto; padding: 6px 0;">${katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false })}</div>`;
+            } catch (e) {
+                return match;
+            }
+        });
+
+        // インライン数式 $ ... $ (改行を含まず、中身があるもの)
+        result = result.replace(/\$([^\$\n]+?)\$/g, (match, formula) => {
+            try {
+                return `<span class="katex-inline-block">${katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false })}</span>`;
+            } catch (e) {
+                return match;
+            }
+        });
+    } else {
+        // 2. KaTeX未読み込み時のフォールバック（$l, m$ -> 美しいイタリック数学フォント）
+        result = result.replace(/\$\$([\s\S]+?)\$\$/g, '<div class="math-fallback-block" style="text-align: center; font-style: italic; font-family: \'Cambria Math\', \'Times New Roman\', serif; margin: 10px 0; background: rgba(155, 89, 182, 0.08); padding: 8px 12px; border-radius: 8px; font-size: 1.05rem;">$1</div>');
+        result = result.replace(/\$([^\$\n]+?)\$/g, '<span class="math-fallback-inline" style="font-family: \'Cambria Math\', \'Times New Roman\', serif; font-style: italic; font-weight: 600; color: #2c3e50; padding: 0 3px;">$1</span>');
+    }
+
+    return result;
+}
+
+/**
+ * DOM要素内の数式を一括レンダリング（Auto-Render）
+ */
+function renderMathInDOM(element) {
+    if (!element) return;
+    if (typeof renderMathInElement === 'function') {
         try {
-            return `<div class="markdown-body" style="line-height: 1.6; font-size: 0.9rem;">${marked.parse(text)}</div>`;
+            renderMathInElement(element, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\(', right: '\\)', display: false },
+                    { left: '\\[', right: '\\]', display: true }
+                ],
+                throwOnError: false
+            });
         } catch (e) {
-            console.error('marked.js parse error:', e);
+            console.warn('KaTeX auto-render warning:', e);
         }
     }
-    return parseCustomMarkdown(text);
+}
+
+function convertMarkdownToHtml(text) {
+    if (!text) return '';
+    
+    // 先に数式を保護/変換するか、パース後に適用
+    let parsedHtml = '';
+    if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+        try {
+            parsedHtml = marked.parse(text);
+        } catch (e) {
+            console.error('marked.js parse error:', e);
+            parsedHtml = parseCustomMarkdown(text);
+        }
+    } else {
+        parsedHtml = parseCustomMarkdown(text);
+    }
+
+    // 数式記号を美しくレンダリング
+    const finalHtml = renderMathFormulas(parsedHtml);
+    return `<div class="markdown-body learning-content-rendered" style="line-height: 1.7; font-size: 0.93rem;">${finalHtml}</div>`;
 }
 
 // ==========================================
