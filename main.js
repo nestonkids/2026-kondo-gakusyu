@@ -1349,7 +1349,7 @@ function loadSettings() {
         apiKeyInput.value = localStorage.getItem('gemini-api-key') || '';
     }
     if (modelSelect) {
-        modelSelect.value = localStorage.getItem('gemini-model') || 'gemini-1.5-flash';
+        modelSelect.value = localStorage.getItem('gemini-model') || 'gemini-2.5-flash';
     }
 }
 
@@ -1405,18 +1405,21 @@ async function callGeminiAPI(contents, preferredModel = null) {
     }
 
     // ユーザー指定モデル
-    const userSelected = preferredModel || localStorage.getItem('gemini-model') || 'gemini-2.0-flash';
+    const userSelected = preferredModel || localStorage.getItem('gemini-model') || 'gemini-2.5-flash';
     const cleanUserSelected = userSelected.replace(/^models\//, '');
 
-    // 優先的に試行するモデル候補リスト
+    // 優先的に試行するモデル候補リスト（現在利用可能な最新世代を優先）
     let candidateModels = [
         cleanUserSelected,
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-3.5-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.7-flash',
+        'gemini-3-flash',
+        'gemini-3.1-flash-lite',
         'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-latest',
-        'gemini-1.5-pro',
-        'gemini-2.0-flash-exp',
-        'gemini-2.5-flash'
+        'gemini-1.5-flash'
     ];
 
     // 動的にアカウントで使えるモデル一覧を取得できれば優先リストの先頭にマージ
@@ -1533,7 +1536,7 @@ async function testGeminiAPIConnection() {
         
         // ステップ2: 実際のテキスト対話テスト
         const modelSelect = document.getElementById('gemini-model-select');
-        const selectedModel = modelSelect ? modelSelect.value : 'gemini-2.0-flash';
+        const selectedModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
 
         const testContents = [
             {
