@@ -392,37 +392,65 @@ function startReviewProcess() {
     
     const chatLog = document.getElementById('ai-chat-log');
     
-    if (apiKey && imagePreview && imagePreview.src && imagePreview.src.startsWith('data:')) {
-        // APIキーがあり、画像が選択されている場合はGeminiを呼び出す
-        const base64Data = imagePreview.src.split(',')[1];
-        const mimeType = imagePreview.src.split(';')[0].split(':')[1] || 'image/jpeg';
-        
+    const rawApiKey = localStorage.getItem('gemini-api-key') || '';
+    const apiKey = rawApiKey.trim();
+
+    if (apiKey) {
         // 15個のカスタマイズプロファイルを生成
         const aiProfilePrompt = buildAISystemPromptProfile();
 
-        const systemPrompt = `あなたは学習アシスタント「わかるくん」です。
-ユーザーがアップロードした勉強用ノート（またはプリントなどの画像）を分析・解説してください。
+        const hasValidImage = imagePreview && imagePreview.src && imagePreview.src.startsWith('data:');
+
+        let systemPrompt = '';
+        const parts = [];
+
+        if (hasValidImage) {
+            const base64Data = imagePreview.src.split(',')[1];
+            const mimeType = imagePreview.src.split(';')[0].split(':')[1] || 'image/jpeg';
+
+            systemPrompt = `あなたは親切でわかりやすい学習アシスタント「わかるくん」です。
+ユーザーがアップロードした勉強用ノート（またはプリント・教科書などの画像）を読み取り、生徒が深く理解できるように丁寧に解説授業を行ってください。
+
+${aiProfilePrompt}
+
+【絶対に守るべき必須解説指示】
+1. 📸 【写真の内容を網羅して丁寧に教える】：
+   - 写真に写っているノートやプリントの文字・問題・板書・公式・図表・要点をしっかりと読み取り、写真の内容をほぼ漏れなく、ステップごとに分かりやすく解説してください。
+   - 単なる数行の短い概要で終わらせず、「このノートに書かれているポイント」「重要公式や定義の解説」「解法の流れや考え方のコツ」を生徒がスラスラ理解できるように具体的に教えてください。
+
+2. ❓ 【最後に必ず質問・問いかけを行う】：
+   - 解説の最後には、必ず生徒の理解を深めるための「確認の問いかけ・ミニ質問（例：〜の場合はどうなると思う？）」を1つ投げかけるか、または「ここまでで分からない所や、もっと詳しく聞きたい質問はある？何でも聞いてね！」と優しく質問の有無を尋ねて対話を促してください。
+
+3. 🎨 【フォーマットとキャラクター設定の遵守】：
+   - Markdown形式（見出し ##、箇条書き、太字、数式など）を使って視認性抜群にレイアウトしてください。
+   - ユーザーが設定したキャラクタープロファイル（口調、熱量、褒め方、例え話など）を100%忠実に守ってください。`;
+
+            parts.push({ text: systemPrompt });
+            parts.push({
+                inlineData: {
+                    mimeType: mimeType,
+                    data: base64Data
+                }
+            });
+        } else {
+            // 画像なしでテキスト解説を求める場合
+            systemPrompt = `あなたは親切でわかりやすい学習アシスタント「わかるくん」です。
+生徒に向けて、今日の復習・学習ガイダンスを親身に行ってください。
 
 ${aiProfilePrompt}
 
 【解説における指示】
-1. ノートの画像を認識し、学習科目（例：数学、国語、英語、理科、社会等）と具体単元名を特定してください。
-2. 画像の内容を要約し、設定プロファイルで指定された【口調・テンション・長さ・例え話・キャラクター性】を100%忠実に守って回答してください。
-3. 語尾、絵文字、厳しさ、熱量も設定プロファイル通りに完全に表現してください。
-4. Markdown形式（箇条書き、太字等）で見やすくフォーマットしてください。`;
+1. 今日勉強したい科目や単元について、生徒が質問しやすいように温かく迎えてください。
+2. 最後に必ず「どんな勉強をしているかな？分からない問題や公式があったら何でも質問してね！」と問いかけてください。
+3. Markdown形式で見やすく記述してください。`;
+
+            parts.push({ text: systemPrompt });
+        }
 
         const contents = [
             {
                 role: 'user',
-                parts: [
-                    { text: systemPrompt },
-                    {
-                        inlineData: {
-                            mimeType: mimeType,
-                            data: base64Data
-                        }
-                    }
-                ]
+                parts: parts
             }
         ];
 
@@ -437,31 +465,46 @@ ${aiProfilePrompt}
             }
             switchScreen('ai-response');
         }).catch((err) => {
-            console.error(err);
+            console.error('Gemini Review Error:', err);
             if (chatLog) {
                 chatLog.innerHTML = `
                     <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
                         <span style="font-size: 1.2rem;">🤖</span>
-                        <p style="color: #e74c3c;">Gemini APIの呼び出しに失敗しました。<br>エラー: ${escapeHtml(err.message)}<br><br>※設定画面でAPIキーが正しいか確認してください。一時的にダミーチャットを開始します。</p>
+                        <div>
+                            <p style="color: #e74c3c; font-weight: bold; margin-bottom: 8px;">⚠️ Gemini APIによる解説の取得に失敗しました</p>
+                            <p style="font-size: 0.88rem; color: #546e7a; margin-bottom: 10px;">${escapeHtml(err.message)}</p>
+                            <div style="font-size: 0.82rem; background: rgba(0,0,0,0.04); padding: 8px 12px; border-radius: 8px;">
+                                💡 <strong>対処法:</strong> 右上の「⚙️」設定画面を開き、APIキーが正しいか確認するか、「⚡ 接続テストを実行」ボタンで通信状態をチェックしてください。
+                            </div>
+                        </div>
                     </div>
                 `;
             }
             switchScreen('ai-response');
         });
     } else {
-        // APIキーがない場合、または画像がない場合は、従来の2.5秒ロード待ち（モック演出）
+        // APIキーが未入力の場合はモック演出
         setTimeout(() => {
             if (chatLog) {
                 chatLog.innerHTML = `
                     <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
                         <span style="font-size: 1.2rem;">🤖</span>
-                        <p>アップロードされたノートについて何でも聞いてね！わからない部分や解説してほしい所があれば質問してください。</p>
+                        <div>
+                            <h3>📖 ノートの内容を解説するよ！（模擬モード）</h3>
+                            <p>アップロードされたノートの内容を確認しました！ここに書かれている重要ポイントを教えるね。</p>
+                            <ul>
+                                <li><strong>基本公式・定義：</strong> ノートに書かれた公式や重要語句の成り立ちと使い方をマスターしよう！</li>
+                                <li><strong>解き方のステップ：</strong> 途中の式変形や思考の手順を1つずつ確認して進めるのがコツだよ。</li>
+                                <li><strong>よくあるミス：</strong> 符号のミスや条件の見落としに注意しよう！</li>
+                            </ul>
+                            <p style="margin-top: 10px; font-weight: bold; color: var(--accent-purple);">💬 ここまでで分からないところや、もっと詳しく知りたい質問はある？何でも聞いてね！</p>
+                            <p style="margin-top: 8px; font-size: 0.8rem; color: #7f8c8d;">※本物のAIであなたのノート専用のリアルタイム解説を受けるには、右上の「⚙️」からGemini APIキーを設定してください。</p>
+                        </div>
                     </div>
                 `;
             }
-            // 解説画面へ
             switchScreen('ai-response');
-        }, 2500);
+        }, 2000);
     }
 }
 
@@ -518,13 +561,16 @@ function sendChatQuestion() {
 
 ${aiProfilePrompt}
 
-※上記で指示された【口調・トーン・褒め方・長さ・厳しさ・キャラクター性・熱量】を100%徹底して自然に対話を継続してください。
-※回答はMarkdown形式（箇条書き、太字等）で読みやすくまとめてください。`
+【対話ルール】
+1. 生徒の質問に親切・丁寧に答えつつ、写真のノートや問題の内容と関連付けて分かりやすく解説してください。
+2. 回答の最後には、「〜についてどう思う？」「次はここを解いてみる？」などの確認クイズ・問いかけを投げかけるか、または「他によく分からない点や質問はある？」と優しく尋ねて対話を継続させてください。
+3. 設定プロファイルで指示された【口調・トーン・褒め方・長さ・厳しさ・キャラクター性・熱量】を100%徹底してください。
+4. Markdown形式（箇条書き、太字等）で読みやすくまとめてください。`
             }]
         });
         contents.push({
             role: 'model',
-            parts: [{ text: "了解しました！設定されたプロフィール・口調・キャラクター性に100%従って対話を継続します。" }]
+            parts: [{ text: "了解しました！質問に分かりやすく答え、設定されたキャラクター性を守りながら、最後に質問や問いかけを入れて対話を深めます！" }]
         });
 
         messages.forEach(msg => {
@@ -1167,7 +1213,9 @@ function buildAISystemPromptProfile() {
     
     let energyText = energy >= 66 ? "パッション溢れる熱血エネルギッシュなキャラで、『燃えてきたぞ！全力で突き進もう！🔥』とパッション全開で接してください。" : (energy <= 35 ? "落ち着いた知性派・クールなキャラで、冷静かつスマートに接してください。" : "元気で前向きなトーンで接してください。");
 
-    let interactionText = interaction >= 66 ? "解説の最後には『君ならどう思う？』など、ユーザーへ積極的に問いかけやクイズを出してください。" : "必要以上の質問は避け、スッキリと解説を完結させてください。";
+    let interactionText = interaction >= 66
+        ? "解説の最後には『ここはどうなると思う？』と理解度を深めるミニクイズや問いかけを積極的に投げかけてください。"
+        : "解説の最後には『ここまでで分からない所や他に質問はあるかな？』と優しく質問の有無を確認してください。";
     
     let hintText = hint >= 66 ? "すぐに答えは教えず、『まずはここに着目してみてごらん！』と段階的なヒントを出して考えさせてください。" : "迷わせずダイレクトに正解と手順を直球提示してください。";
 
@@ -1269,34 +1317,147 @@ function loadSettings() {
 // ==========================================
 // 🌐 Gemini API 連携ユーティリティ
 // ==========================================
-async function callGeminiAPI(contents) {
-    const apiKey = localStorage.getItem('gemini-api-key');
-    const model = localStorage.getItem('gemini-model') || 'gemini-1.5-flash';
+async function callGeminiAPI(contents, preferredModel = null) {
+    const rawApiKey = localStorage.getItem('gemini-api-key') || '';
+    const apiKey = rawApiKey.trim();
     if (!apiKey) {
-        throw new Error('API key is missing');
+        throw new Error('Gemini APIキーが設定されていません。右上の「⚙️」設定画面でAPIキーを入力して保存してください。');
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ contents })
-    });
+    const selectedModel = preferredModel || localStorage.getItem('gemini-model') || 'gemini-2.0-flash';
+    
+    // 試行するモデル候補リスト（指定モデル ➔ 2.0-flash ➔ 1.5-flash ➔ 1.5-pro）
+    const candidateModels = [
+        selectedModel,
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro'
+    ].filter((m, idx, self) => self.indexOf(m) === idx);
 
-    if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        const errMsg = errData.error?.message || `HTTP error! status: ${response.status}`;
-        throw new Error(errMsg);
+    let lastError = null;
+
+    for (const model of candidateModels) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ contents })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    // 成功したモデルをローカルストレージに記憶
+                    localStorage.setItem('gemini-model', model);
+                    return text;
+                } else if (data.candidates?.[0]?.finishReason) {
+                    throw new Error(`AIの応答がブロックされました (理由: ${data.candidates[0].finishReason})`);
+                }
+            }
+
+            const errData = await response.json().catch(() => ({}));
+            const rawMsg = errData.error?.message || `HTTP ${response.status}`;
+            const statusCode = response.status;
+
+            // 404 (モデル不在) の場合は次の候補モデルへリトライ
+            if (statusCode === 404) {
+                console.warn(`Model ${model} not found, trying fallback candidate...`);
+                lastError = new Error(`モデル ${model} が見つかりませんでした。別のモデルで再試行します。`);
+                continue;
+            }
+
+            // 400 (API KEY INVALID) や 403 (PERMISSION DENIED) の場合は親切なメッセージを返す
+            if (statusCode === 400 && (rawMsg.includes('API_KEY_INVALID') || rawMsg.includes('API key not valid'))) {
+                throw new Error('APIキーが無効です。Google AI Studioで取得した正しいキーが入力されているかご確認ください。');
+            }
+            if (statusCode === 403) {
+                throw new Error('APIのアクセス権限が拒否されました。APIキーの有効性や課金・利用規約の状態をご確認ください。');
+            }
+            if (statusCode === 429) {
+                throw new Error('Gemini APIの利用制限（レートリミット）に達しました。しばらく待ってから再度お試しください。');
+            }
+
+            throw new Error(`Gemini APIエラー (${statusCode}): ${rawMsg}`);
+        } catch (e) {
+            lastError = e;
+            if (e.message.includes('APIキーが無効') || e.message.includes('アクセス権限が拒否') || e.message.includes('利用制限')) {
+                // キーや認証そのもののエラーは即座にスロー
+                throw e;
+            }
+        }
     }
 
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) {
-        throw new Error('AIからの返答を読み取れませんでした。');
+    throw lastError || new Error('Gemini APIへのリクエストに失敗しました。');
+}
+
+/**
+ * 設定画面からAPIキーの接続テストを行う関数
+ */
+async function testGeminiAPIConnection() {
+    const apiKeyInput = document.getElementById('gemini-api-key');
+    const resultEl = document.getElementById('api-test-result');
+    const testBtn = document.getElementById('test-api-btn');
+
+    if (!resultEl) return;
+
+    const rawKey = apiKeyInput ? apiKeyInput.value.trim() : (localStorage.getItem('gemini-api-key') || '').trim();
+
+    if (!rawKey) {
+        resultEl.innerHTML = '<span style="color: #e74c3c; font-weight: bold;">⚠️ APIキーを入力してください。</span>';
+        resultEl.style.display = 'block';
+        return;
     }
-    return text;
+
+    if (testBtn) {
+        testBtn.disabled = true;
+        testBtn.textContent = '🔄 接続テスト中...';
+    }
+
+    resultEl.innerHTML = '<span style="color: #546e7a;">🌐 Google Gemini サーバーに接続しています...</span>';
+    resultEl.style.display = 'block';
+
+    try {
+        const modelSelect = document.getElementById('gemini-model-select');
+        const selectedModel = modelSelect ? modelSelect.value : 'gemini-2.0-flash';
+
+        // テスト用の軽量プロンプト
+        const testContents = [
+            {
+                role: 'user',
+                parts: [{ text: 'こんにちは！短く「接続成功」とだけ返答してください。' }]
+            }
+        ];
+
+        // 一時的にキーをセットしてテスト
+        localStorage.setItem('gemini-api-key', rawKey);
+        const reply = await callGeminiAPI(testContents, selectedModel);
+
+        const currentModel = localStorage.getItem('gemini-model') || selectedModel;
+        resultEl.innerHTML = `
+            <div style="background: rgba(46, 204, 113, 0.15); border: 1px solid #2ecc71; border-radius: 10px; padding: 10px 14px; color: #27ae60; font-weight: 600; font-size: 0.9rem; line-height: 1.4;">
+                ✅ <strong>接続テスト成功！</strong><br>
+                Gemini API（モデル: ${currentModel}）との通信に成功しました。<br>
+                <span style="font-size: 0.8rem; color: #546e7a;">AIの応答: 「${escapeHtml(reply.trim())}」</span>
+            </div>
+        `;
+    } catch (err) {
+        console.error('API Test Error:', err);
+        resultEl.innerHTML = `
+            <div style="background: rgba(231, 76, 60, 0.15); border: 1px solid #e74c3c; border-radius: 10px; padding: 10px 14px; color: #c0392b; font-weight: 600; font-size: 0.9rem; line-height: 1.4;">
+                ❌ <strong>接続テスト失敗</strong><br>
+                ${escapeHtml(err.message)}
+            </div>
+        `;
+    } finally {
+        if (testBtn) {
+            testBtn.disabled = false;
+            testBtn.textContent = '⚡ 接続テストを実行';
+        }
+    }
 }
 
 function processInlineMarkdown(text) {

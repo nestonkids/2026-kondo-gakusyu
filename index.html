@@ -355,17 +355,22 @@
                             本物のAI（Google Gemini）を使って、あなたのノートの写真を分析したり、リアルタイムでチャット解説を受けることができます。APIキーはブラウザに安全に保存されます。
                         </p>
                         <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-                            <input type="password" id="gemini-api-key" placeholder="AIzaSy..." style="width: 100%; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--glass-border); font-size: 0.95rem; outline: none; background: rgba(255,255,255,0.85);">
+                            <div style="display: flex; gap: 8px; width: 100%;">
+                                <input type="password" id="gemini-api-key" placeholder="AIzaSy..." style="flex: 1; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--glass-border); font-size: 0.95rem; outline: none; background: rgba(255,255,255,0.85);">
+                                <button type="button" onclick="const k=document.getElementById('gemini-api-key'); k.type = k.type==='password'?'text':'password'; this.textContent = k.type==='password'?'👁️':'🔒';" class="back-button" style="padding: 10px 14px; font-size: 1rem; border-radius: 12px;" title="表示/非表示">👁️</button>
+                            </div>
                             <span style="font-size: 0.8rem; color: #7f8c8d;">※ APIキーはGoogle AI Studio等で無料で取得できます。入力しない場合は、従来のダミー機能（モック）で動作します。</span>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+                        <div style="display: flex; gap: 10px; align-items: center; width: 100%; flex-wrap: wrap;">
                             <label for="gemini-model-select" style="font-size: 0.9rem; font-weight: 600; color: #546e7a; white-space: nowrap;">使用モデル:</label>
-                            <select id="gemini-model-select" style="padding: 8px 12px; border-radius: 10px; border: 1px solid var(--glass-border); font-size: 0.9rem; outline: none; background: white; flex: 1;">
-                                <option value="gemini-2.0-flash">gemini-2.0-flash (最新・高精度)</option>
-                                <option value="gemini-1.5-flash">gemini-1.5-flash (軽量・高速)</option>
+                            <select id="gemini-model-select" style="padding: 8px 12px; border-radius: 10px; border: 1px solid var(--glass-border); font-size: 0.9rem; outline: none; background: white; flex: 1; min-width: 180px;">
+                                <option value="gemini-2.0-flash">gemini-2.0-flash (最新・高速高精度・推奨)</option>
+                                <option value="gemini-1.5-flash">gemini-1.5-flash (標準・軽量)</option>
                                 <option value="gemini-1.5-pro">gemini-1.5-pro (高度な推論・分析)</option>
                             </select>
+                            <button type="button" id="test-api-btn" onclick="testGeminiAPIConnection()" class="glass-button" style="padding: 8px 16px; font-size: 0.85rem; background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; border: none; white-space: nowrap;">⚡ 接続テストを実行</button>
                         </div>
+                        <div id="api-test-result" style="display: none; width: 100%; margin-top: 4px;"></div>
                     </div>
 
                     <!-- セクション：データのリセット -->
