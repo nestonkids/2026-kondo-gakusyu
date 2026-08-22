@@ -260,56 +260,53 @@
                     <h2 class="screen-title" style="margin-bottom: 0; font-size: 1.45rem;">✨ AIのピンポイント解説授業</h2>
                     <button class="back-button header-action-btn" onclick="switchScreen('review')">📷 写真を選び直す</button>
                 </div>
+
+                <!-- 📷 一番上：アップロードしたノート・資料表示エリア -->
+                <div class="top-teaching-image-banner" id="ai-top-image-banner">
+                    <div class="top-image-header">
+                        <span class="top-image-title">📷 アップロードしたノート・資料</span>
+                        <span class="top-image-hint">※ 写真をクリックで原寸大表示</span>
+                    </div>
+                    <div class="teaching-image-box top-image-box">
+                        <img id="teaching-image-preview" src="" alt="ノートプレビュー" onclick="window.open(this.src)">
+                    </div>
+                </div>
                 
-                <div class="teaching-layout">
-                    <!-- 左側：ノートプレビュー -->
-                    <div class="left-teaching-panel">
-                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #546e7a;">📷 アップロードしたノート</h4>
-                        <div class="teaching-image-box">
-                            <img id="teaching-image-preview" src="" alt="ノートプレビュー">
+                <!-- チャット欄（フルワイド） -->
+                <div class="ai-chat-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 AIの解説授業（対話モード）</h4>
+                        <div id="ai-active-persona-tags" class="ai-persona-banner" style="margin: 0; width: auto;"></div>
+                    </div>
+                    
+                    <div id="ai-chat-log" class="teaching-chat-log">
+                        <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
+                            <span style="font-size: 1.3rem;">🤖</span>
+                            <div class="markdown-body"><p>アップロードされたノートについて何でも聞いてね。わからない部分や解説してほしい所があれば質問してください。</p></div>
                         </div>
-                        <span style="font-size: 0.8rem; color: #7f8c8d; text-align: center;">※画像プレビュー</span>
                     </div>
 
-                    <!-- 右側：AIの指示エリア -->
-                    <div class="right-teaching-panel">
-                        <!-- チャット欄 -->
-                        <div class="ai-chat-section">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                                <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 AIの解説授業（対話モード）</h4>
-                                <div id="ai-active-persona-tags" class="ai-persona-banner" style="margin: 0; width: auto;"></div>
-                            </div>
-                            
-                            <div id="ai-chat-log" class="teaching-chat-log">
-                                <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
-                                    <span style="font-size: 1.3rem;">🤖</span>
-                                    <div class="markdown-body"><p>アップロードされたノートについて何でも聞いてね。わからない部分や解説してほしい所があれば質問してください。</p></div>
-                                </div>
-                            </div>
-
-                            <!-- 添付ファイルプレビュー表示エリア（画像選択時に表示） -->
-                            <div id="chat-attachment-preview-container" class="chat-attachment-preview-container hidden">
-                                <div class="attachment-preview-badge">
-                                    <img id="chat-attachment-img-preview" src="" alt="添付画像">
-                                    <span id="chat-attachment-name" class="attachment-name">写真が添付されました</span>
-                                    <button type="button" class="attachment-remove-btn" onclick="clearChatAttachment()" title="添付を解除">✕</button>
-                                </div>
-                            </div>
-
-                            <!-- 質問入力バー -->
-                            <div class="chat-input-row">
-                                <input type="file" id="chat-file-upload" accept="image/*" class="hidden" onchange="handleChatFileUpload(event)">
-                                <button type="button" class="chat-attach-btn" onclick="document.getElementById('chat-file-upload').click()" title="写真・画像を添付する">➕</button>
-                                <input type="text" id="chat-question-input" placeholder="質問を入力してください...（例：この問題の解き方を教えて）" onkeypress="handleChatKeyPress(event)">
-                                <button class="glass-button chat-send-btn" onclick="sendChatQuestion()">送信</button>
-                            </div>
-
-                            <!-- 次のアクション選択肢ボタン（練習問題・ホームへ戻る） -->
-                            <div class="teaching-action-buttons">
-                                <button class="start-plan-btn practice-action-btn" onclick="goToPracticeQuestions()">🎯 練習問題に挑戦する（5問）</button>
-                                <button class="start-plan-btn save-action-btn" onclick="saveWakaruSessionAndReturnHome()">💾 授業を完了してホームへ保存</button>
-                            </div>
+                    <!-- 添付ファイルプレビュー表示エリア（画像選択時に表示） -->
+                    <div id="chat-attachment-preview-container" class="chat-attachment-preview-container hidden">
+                        <div class="attachment-preview-badge">
+                            <img id="chat-attachment-img-preview" src="" alt="添付画像">
+                            <span id="chat-attachment-name" class="attachment-name">写真が添付されました</span>
+                            <button type="button" class="attachment-remove-btn" onclick="clearChatAttachment()" title="添付を解除">✕</button>
                         </div>
+                    </div>
+
+                    <!-- 質問入力バー -->
+                    <div class="chat-input-row">
+                        <input type="file" id="chat-file-upload" accept="image/*" class="hidden" onchange="handleChatFileUpload(event)">
+                        <button type="button" class="chat-attach-btn" onclick="document.getElementById('chat-file-upload').click()" title="写真・画像を添付する">➕</button>
+                        <input type="text" id="chat-question-input" placeholder="質問を入力してください...（例：この問題の解き方を教えて）" onkeypress="handleChatKeyPress(event)">
+                        <button class="glass-button chat-send-btn" onclick="sendChatQuestion()">送信</button>
+                    </div>
+
+                    <!-- 次のアクション選択肢ボタン（練習問題・ホームへ戻る） -->
+                    <div class="teaching-action-buttons">
+                        <button class="start-plan-btn practice-action-btn" onclick="goToPracticeQuestions()">🎯 練習問題に挑戦する（5問）</button>
+                        <button class="start-plan-btn save-action-btn" onclick="saveWakaruSessionAndReturnHome()">💾 授業を完了してホームへ保存</button>
                     </div>
                 </div>
             </div>
@@ -334,6 +331,17 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 📷 出題元のノート（一番上に表示） -->
+                    <div id="practice-note-preview-box" class="practice-top-note-box hidden">
+                        <div class="practice-note-header">
+                            <span style="font-weight: 700; color: #1e293b;">📷 アップロードしたノート（このノートから出題）</span>
+                            <span style="font-size: 0.8rem; color: #64748b;">※ クリックで原寸大表示</span>
+                        </div>
+                        <div class="practice-note-img-wrap">
+                            <img id="practice-note-img" src="" alt="ノート写真" onclick="window.open(this.src)">
+                        </div>
+                    </div>
                     
                     <div class="test-questions" id="practice-questions-container">
                         <!-- 動的に5問生成・挿入されます -->
@@ -347,6 +355,78 @@
                         </div>
                         <div id="wakaru-advice-text" style="font-size: 0.95rem; color: #2c3e50; line-height: 1.6; font-family: sans-serif;">
                             <!-- AIによるアドバイスが動的に生成されます -->
+                        </div>
+                    </div>
+
+                    <!-- 📊 これまでの学習統計＆成長アナリティクス (採点後に表示) -->
+                    <div id="practice-stats-box" class="hidden practice-stats-container">
+                        <div class="stats-box-header">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 1.8rem;">📊</span>
+                                <div>
+                                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #1e293b; margin: 0;">これまでの学習統計 ＆ 成長レポート</h3>
+                                    <p style="font-size: 0.8rem; color: #64748b; margin: 0;">過去の記録・テストと比較したあなたの成果</p>
+                                </div>
+                            </div>
+                            <span class="stats-trend-badge" id="practice-stats-trend-badge">📈 スコア上昇中！</span>
+                        </div>
+
+                        <!-- 4つのメイン指標カード -->
+                        <div class="stats-metrics-grid">
+                            <div class="metric-card">
+                                <span class="metric-label">🎯 今回のスコア</span>
+                                <div class="metric-value-row">
+                                    <span class="metric-val primary" id="stats-current-score">0</span>
+                                    <span class="metric-sub">/ 100点</span>
+                                </div>
+                                <span class="metric-subtext" id="stats-current-accuracy">正答率: 0%</span>
+                            </div>
+
+                            <div class="metric-card">
+                                <span class="metric-label">📈 通算平均スコア</span>
+                                <div class="metric-value-row">
+                                    <span class="metric-val" id="stats-avg-score">0</span>
+                                    <span class="metric-sub">点</span>
+                                </div>
+                                <span class="metric-subtext" id="stats-total-tests">累計 0 回実施</span>
+                            </div>
+
+                            <div class="metric-card">
+                                <span class="metric-label">🔥 前回との比較</span>
+                                <div class="metric-value-row">
+                                    <span class="metric-val positive" id="stats-diff-score">+0</span>
+                                    <span class="metric-sub">点</span>
+                                </div>
+                                <span class="metric-subtext" id="stats-diff-text">前回より成長！</span>
+                            </div>
+
+                            <div class="metric-card">
+                                <span class="metric-label">🏆 過去最高スコア</span>
+                                <div class="metric-value-row">
+                                    <span class="metric-val text-gold" id="stats-max-score">0</span>
+                                    <span class="metric-sub">点</span>
+                                </div>
+                                <span class="metric-subtext" id="stats-accuracy-rate">通算正答率: 0%</span>
+                            </div>
+                        </div>
+
+                        <!-- スコア推移グラフ & 教科別分布 -->
+                        <div class="stats-visual-row">
+                            <!-- 最近のスコア推移バーチャート -->
+                            <div class="stats-chart-card">
+                                <h4 class="chart-card-title">📈 最近のスコア推移（直近5回）</h4>
+                                <div class="score-bars-container" id="stats-score-bars">
+                                    <!-- 動的にバーを描画 -->
+                                </div>
+                            </div>
+
+                            <!-- 教科別の習熟度・実施回数 -->
+                            <div class="stats-chart-card">
+                                <h4 class="chart-card-title">📚 教科別の習熟度・演習回数</h4>
+                                <div class="subject-mastery-list" id="stats-subject-mastery">
+                                    <!-- 動的にプログレスバーを描画 -->
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -373,43 +453,41 @@
                     </div>
                 </div>
                 
-                <div class="teaching-layout">
-                    <!-- 左側：ノートプレビュー -->
-                    <div class="left-teaching-panel">
-                        <h4 style="font-size: 0.95rem; font-weight: 600; color: #546e7a;">📷 学習時のノートの資料</h4>
-                        <div id="history-image-container" class="teaching-image-box">
-                            <img id="history-chat-image" src="" alt="ノートプレビュー">
-                            <div id="history-chat-placeholder" class="hidden" style="font-size: 4rem; text-align: center;">📊</div>
+                <!-- 📷 一番上：学習時のノート資料表示エリア -->
+                <div class="top-teaching-image-banner" id="history-top-image-banner">
+                    <div class="top-image-header">
+                        <span class="top-image-title">📷 学習時のノート資料</span>
+                        <span id="history-chat-date" style="font-size: 0.82rem; color: #64748b; font-weight: 600;"></span>
+                    </div>
+                    <div id="history-image-container" class="teaching-image-box top-image-box">
+                        <img id="history-chat-image" src="" alt="ノートプレビュー" onclick="window.open(this.src)">
+                        <div id="history-chat-placeholder" class="hidden" style="font-size: 3rem; text-align: center;">📊</div>
+                    </div>
+                </div>
+
+                <!-- 会話履歴エリア（フルワイド） -->
+                <div class="ai-chat-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 授業中の会話ログ</h4>
+                        <div id="history-active-persona-tags" class="ai-persona-banner" style="margin: 0; width: auto;"></div>
+                    </div>
+                    <div id="history-chat-log" class="teaching-chat-log">
+                        <!-- チャット履歴が動的に表示されます -->
+                    </div>
+                    <!-- 添付ファイルプレビュー表示エリア（画像選択時に表示） -->
+                    <div id="history-attachment-preview-container" class="chat-attachment-preview-container hidden">
+                        <div class="attachment-preview-badge">
+                            <img id="history-attachment-img-preview" src="" alt="添付画像">
+                            <span id="history-attachment-name" class="attachment-name">写真が添付されました</span>
+                            <button type="button" class="attachment-remove-btn" onclick="clearHistoryAttachment()" title="添付を解除">✕</button>
                         </div>
-                        <span id="history-chat-date" style="font-size: 0.82rem; color: #7f8c8d; text-align: center; font-weight: 600; margin-top: 4px;"></span>
                     </div>
 
-                    <!-- 右側：会話履歴エリア -->
-                    <div class="right-teaching-panel">
-                        <div class="ai-chat-section">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                                <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 授業中の会話ログ</h4>
-                                <div id="history-active-persona-tags" class="ai-persona-banner" style="margin: 0; width: auto;"></div>
-                            </div>
-                            <div id="history-chat-log" class="teaching-chat-log">
-                                <!-- チャット履歴が動的に表示されます -->
-                            </div>
-                            <!-- 添付ファイルプレビュー表示エリア（画像選択時に表示） -->
-                            <div id="history-attachment-preview-container" class="chat-attachment-preview-container hidden">
-                                <div class="attachment-preview-badge">
-                                    <img id="history-attachment-img-preview" src="" alt="添付画像">
-                                    <span id="history-attachment-name" class="attachment-name">写真が添付されました</span>
-                                    <button type="button" class="attachment-remove-btn" onclick="clearHistoryAttachment()" title="添付を解除">✕</button>
-                                </div>
-                            </div>
-
-                            <div class="chat-input-row">
-                                <input type="file" id="history-file-upload" accept="image/*" class="hidden" onchange="handleHistoryFileUpload(event)">
-                                <button type="button" class="chat-attach-btn" onclick="document.getElementById('history-file-upload').click()" title="写真・画像を添付する">➕</button>
-                                <input type="text" id="history-chat-input" placeholder="この会話の続きや写真について質問する..." onkeypress="handleHistoryChatKeyPress(event)">
-                                <button class="glass-button chat-send-btn" onclick="sendHistoryChatQuestion()">送信</button>
-                            </div>
-                        </div>
+                    <div class="chat-input-row">
+                        <input type="file" id="history-file-upload" accept="image/*" class="hidden" onchange="handleHistoryFileUpload(event)">
+                        <button type="button" class="chat-attach-btn" onclick="document.getElementById('history-file-upload').click()" title="写真・画像を添付する">➕</button>
+                        <input type="text" id="history-chat-input" placeholder="この会話の続きや写真について質問する..." onkeypress="handleHistoryChatKeyPress(event)">
+                        <button class="glass-button chat-send-btn" onclick="sendHistoryChatQuestion()">送信</button>
                     </div>
                 </div>
             </div>
