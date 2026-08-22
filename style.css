@@ -61,15 +61,17 @@ body {
     50% { transform: translateY(-30px) scale(1.05); }
 }
 
-/* 💻 メインコンテナ */
+/* 💻 メインコンテナ（画面全体を広く美しく活用） */
 .container {
-    width: 95vw;
-    max-width: 1200px;
-    height: 85vh;
+    width: 100%;
+    max-width: 1720px;
+    height: calc(100vh - 20px);
+    height: calc(100dvh - 20px);
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
+    box-sizing: border-box;
 }
 
 /* 画面の切り替え設定 */
@@ -79,8 +81,8 @@ body {
     height: 100%;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(20px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
+    transform: translateY(15px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -95,18 +97,20 @@ body {
 /* ✨ ガラスモルフィズムカード */
 .glass-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border: 1px solid var(--glass-border);
-    border-radius: 32px;
-    padding: 35px;
+    border-radius: 28px;
+    padding: 24px 30px;
     width: 100%;
     height: 100%;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: stretch;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 /* 🏠 ホーム画面の左右レイアウト */
@@ -117,7 +121,7 @@ body {
     height: 100%;
     align-items: center;
     justify-content: space-between;
-    gap: 25px;
+    gap: 30px;
 }
 
 /* 👈 左パネル：メニューボタン側 */
@@ -391,18 +395,259 @@ body {
 }
 
 /* ==========================================
-   ✨ AI授業解説・チャット画面のスタイル
+   ✨ AI授業解説・チャット画面のスタイル（大画面フル活用）
 ========================================== */
+.screen-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.header-badge {
+    background: rgba(155, 89, 182, 0.12);
+    color: var(--accent-purple);
+    font-weight: 700;
+    font-size: 0.88rem;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(155, 89, 182, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.glass-card.teaching-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px 26px;
+    overflow: hidden;
+}
+
 .teaching-layout {
     display: flex;
+    flex-direction: row;
     gap: 24px;
     width: 100%;
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+}
+
+/* 👈 左側：アップロードノートプレビュー（大画面で視認性抜群） */
+.left-teaching-panel {
+    flex: 0 0 38%;
+    max-width: 520px;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     height: 100%;
     min-height: 0;
 }
 
+.panel-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.zoom-hint-btn {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+    background: rgba(52, 152, 219, 0.1);
+    padding: 4px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.zoom-hint-btn:hover {
+    background: var(--accent-blue);
+    color: #ffffff;
+}
+
+.teaching-image-box {
+    flex: 1;
+    min-height: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+    cursor: zoom-in;
+    transition: border-color 0.2s;
+}
+.teaching-image-box:hover {
+    border-color: var(--accent-blue);
+}
+
+.teaching-image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px;
+    transition: transform 0.3s ease;
+}
+
+.image-zoom-overlay {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: white;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 20px;
+    opacity: 0.85;
+    pointer-events: none;
+    transition: all 0.2s;
+}
+.teaching-image-box:hover .image-zoom-overlay {
+    opacity: 1;
+    background: rgba(52, 152, 219, 0.9);
+    transform: translateY(-2px);
+}
+
+/* 👉 右側：AI対話＆解説エリア */
+.right-teaching-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+}
+
+.ai-chat-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid var(--glass-border);
+    border-radius: 22px;
+    padding: 18px 22px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.03);
+}
+
+.chat-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.online-indicator {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #27ae60;
+    background: rgba(46, 204, 113, 0.12);
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+
+.custom-chat-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 24px;
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 18px;
+    border: 1px solid rgba(155, 89, 182, 0.12);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* カスタムスクロールバー（チャット & テスト用紙） */
+.custom-chat-scroll::-webkit-scrollbar,
+.test-card-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-chat-scroll::-webkit-scrollbar-track,
+.test-card-scroll::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 4px;
+}
+.custom-chat-scroll::-webkit-scrollbar-thumb,
+.test-card-scroll::-webkit-scrollbar-thumb {
+    background: rgba(155, 89, 182, 0.25);
+    border-radius: 4px;
+}
+.custom-chat-scroll::-webkit-scrollbar-thumb:hover,
+.test-card-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(155, 89, 182, 0.45);
+}
+
+.chat-input-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    flex-shrink: 0;
+}
+
+.chat-input-row input {
+    flex: 1;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    font-size: 1.02rem;
+    outline: none;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.chat-input-row input:focus {
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.15);
+}
+
+.chat-input-row .send-btn {
+    padding: 12px 28px;
+    font-size: 1.02rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.25);
+}
+.chat-input-row .send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(155, 89, 182, 0.35);
+}
+
+.screen-footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
 .chat-message {
-    margin-bottom: 14px;
+    margin-bottom: 8px;
     animation: fadeIn 0.3s ease-out;
 }
 
@@ -412,28 +657,28 @@ body {
 
 .chat-message.ai p,
 .chat-message.ai > div {
-    background: white;
+    background: #ffffff;
     color: var(--text-color);
-    padding: 18px 24px;
-    border-radius: 18px;
+    padding: 22px 28px;
+    border-radius: 20px;
     border-top-left-radius: 4px;
-    font-size: 1.04rem;
-    max-width: 95%;
-    line-height: 1.85;
-    border: 1px solid rgba(155, 89, 182, 0.15);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    font-size: 1.08rem;
+    max-width: 96%;
+    line-height: 1.95;
+    border: 1px solid rgba(155, 89, 182, 0.14);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
 }
 
 .chat-message.user p,
 .chat-message.user > div {
     background: linear-gradient(135deg, #3498db, #2980b9);
     color: white;
-    padding: 14px 20px;
-    border-radius: 18px;
+    padding: 15px 22px;
+    border-radius: 20px;
     border-top-right-radius: 4px;
-    font-size: 1.0rem;
+    font-size: 1.04rem;
     max-width: 90%;
-    line-height: 1.6;
+    line-height: 1.65;
     box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
 }
 
@@ -442,17 +687,106 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* 🔍 ノート全画面拡大モーダル (Lightbox) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    box-sizing: border-box;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    position: relative;
+    max-width: 94vw;
+    max-height: 94vh;
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 24px;
+    padding: 18px 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: -14px;
+    right: -14px;
+    background: #1e293b;
+    color: white;
+    border: 3px solid white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s, background-color 0.2s;
+    z-index: 10;
+}
+.modal-close-btn:hover {
+    transform: scale(1.1);
+    background: #e74c3c;
+}
+
+.modal-image-wrapper {
+    max-width: 100%;
+    max-height: 80vh;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-image-wrapper img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.modal-caption {
+    margin-top: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #64748b;
+}
+
 /* ==========================================
    📄 テスト用紙 (Test Paper) スタイル
 ========================================== */
+.glass-card.test-card-scroll {
+    display: block;
+    overflow-y: auto;
+    padding: 30px;
+    height: 100%;
+}
+
 .test-paper {
     background: #ffffff;
     color: #2c3e50;
     width: 100%;
-    max-width: 750px;
+    max-width: 960px;
     margin: 10px auto;
-    padding: 35px 45px;
-    border-radius: 8px;
+    padding: 45px 55px;
+    border-radius: 16px;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.06), 0 5px 15px rgba(0, 0, 0, 0.02);
     border: 1px solid rgba(0, 0, 0, 0.08);
     position: relative;
@@ -1465,63 +1799,63 @@ body {
 }
 
 /* ==========================================
-   📐 数式 (KaTeX) & AI解説 Markdown タイポグラフィ
+   📐 数式 (KaTeX) & AI解説 Markdown タイポグラフィ（大画面・高視認性）
    ========================================== */
 .markdown-body {
-    line-height: 1.9;
-    font-size: 1.05rem;
-    color: #2c3e50;
+    line-height: 1.95;
+    font-size: 1.08rem;
+    color: #1e293b;
     word-break: break-word;
 }
 
 .markdown-body p {
-    margin: 10px 0;
+    margin: 12px 0;
 }
 
 .markdown-body h1,
 .markdown-body h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #6c3483;
+    font-size: 1.32rem;
+    font-weight: 800;
+    color: #5b2c6f;
     border-bottom: 2px solid rgba(155, 89, 182, 0.25);
-    padding-bottom: 6px;
-    margin: 18px 0 12px 0;
+    padding-bottom: 8px;
+    margin: 22px 0 14px 0;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .markdown-body h3 {
-    font-size: 1.12rem;
-    font-weight: 700;
+    font-size: 1.18rem;
+    font-weight: 800;
     color: #2c3e50;
-    margin: 16px 0 10px 0;
-    background: rgba(155, 89, 182, 0.09);
-    padding: 8px 14px;
-    border-radius: 10px;
-    border-left: 5px solid var(--accent-purple);
+    margin: 18px 0 12px 0;
+    background: linear-gradient(90deg, rgba(155, 89, 182, 0.12), rgba(155, 89, 182, 0.02));
+    padding: 10px 16px;
+    border-radius: 12px;
+    border-left: 6px solid var(--accent-purple);
 }
 
 .markdown-body h4 {
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: #4a235a;
-    margin: 14px 0 6px 0;
+    margin: 16px 0 8px 0;
     display: inline-block;
-    background: rgba(52, 152, 219, 0.08);
-    padding: 4px 10px;
-    border-radius: 6px;
+    background: rgba(52, 152, 219, 0.1);
+    padding: 6px 14px;
+    border-radius: 8px;
 }
 
 .markdown-body ul,
 .markdown-body ol {
-    padding-left: 26px;
-    margin: 10px 0 16px 0;
+    padding-left: 28px;
+    margin: 12px 0 18px 0;
 }
 
 .markdown-body li {
-    margin-bottom: 10px;
-    line-height: 1.85;
+    margin-bottom: 12px;
+    line-height: 1.9;
 }
 
 .markdown-body ul ul,
@@ -1533,45 +1867,45 @@ body {
 }
 
 .markdown-body strong {
-    color: #5b2c6f;
-    background: rgba(155, 89, 182, 0.14);
-    padding: 2px 7px;
-    border-radius: 5px;
-    font-weight: 700;
+    color: #4a154b;
+    background: rgba(155, 89, 182, 0.16);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 800;
 }
 
 .markdown-body blockquote {
-    border-left: 5px solid var(--accent-purple);
-    background: rgba(255, 255, 255, 0.75);
-    padding: 12px 18px;
-    border-radius: 0 14px 14px 0;
-    margin: 14px 0;
-    color: #2c3e50;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+    border-left: 6px solid var(--accent-purple);
+    background: rgba(255, 255, 255, 0.85);
+    padding: 14px 22px;
+    border-radius: 0 16px 16px 0;
+    margin: 16px 0;
+    color: #1e293b;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
 }
 
 .markdown-body hr {
     border: none;
     height: 1px;
     background: rgba(155, 89, 182, 0.25);
-    margin: 18px 0;
+    margin: 20px 0;
 }
 
 /* KaTeX 数式表示の最適化（大きく見やすく） */
 .katex {
-    font-size: 1.15em !important;
+    font-size: 1.2em !important;
     text-rendering: auto;
     font-weight: 500;
 }
 
 .katex-display-block,
 .katex-display {
-    margin: 16px 0 !important;
-    padding: 12px 18px !important;
-    background: rgba(255, 255, 255, 0.85) !important;
-    border-radius: 12px !important;
-    border: 1px solid rgba(155, 89, 182, 0.2) !important;
-    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.06) !important;
+    margin: 18px 0 !important;
+    padding: 14px 20px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(155, 89, 182, 0.22) !important;
+    box-shadow: 0 4px 15px rgba(155, 89, 182, 0.07) !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
     text-align: center !important;
@@ -1588,7 +1922,7 @@ body {
     font-style: italic;
     font-weight: 600;
     color: #2c3e50;
-    font-size: 1.1em;
+    font-size: 1.12em;
     padding: 0 4px;
 }
 
@@ -1596,9 +1930,9 @@ body {
     text-align: center;
     font-style: italic;
     font-family: 'Cambria Math', 'Times New Roman', serif;
-    margin: 12px 0;
+    margin: 14px 0;
     background: rgba(155, 89, 182, 0.08);
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-size: 1.15rem;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 1.18rem;
 }

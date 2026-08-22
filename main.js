@@ -370,6 +370,49 @@ function clearFileSelect() {
 }
 
 // ==========================================
+// 🔍 ノート写真の全画面拡大モーダル制御
+// ==========================================
+function openImageModal(imgSrc) {
+    const modal = document.getElementById('image-modal');
+    const modalImg = document.getElementById('modal-image');
+    if (!modal || !modalImg) return;
+
+    if (!imgSrc) {
+        const teachingImg = document.getElementById('teaching-image-preview');
+        const historyImg = document.getElementById('history-chat-image');
+        const reviewImg = document.getElementById('image-preview');
+        imgSrc = (teachingImg && teachingImg.src) || (historyImg && historyImg.src) || (reviewImg && reviewImg.src) || '';
+    }
+
+    if (imgSrc && imgSrc !== window.location.href) {
+        modalImg.src = imgSrc;
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeImageModal(event) {
+    if (event && event.target && event.target.id !== 'image-modal' && !event.target.classList.contains('modal-close-btn')) {
+        return;
+    }
+    const modal = document.getElementById('image-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('image-modal');
+        if (modal && !modal.classList.contains('hidden')) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    }
+});
+
+// ==========================================
 // 🚀 復習を開始する関数
 // ==========================================
 function startReviewProcess() {
@@ -528,20 +571,20 @@ ${aiProfilePrompt}
         setTimeout(() => {
             if (chatLog) {
                 chatLog.innerHTML = `
-                    <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
-                        <span style="font-size: 1.2rem;">🤖</span>
-                        <div class="markdown-body" style="line-height: 1.75; font-size: 0.94rem;">
+                    <div class="chat-message ai" style="display: flex; gap: 10px; align-self: flex-start;">
+                        <span style="font-size: 1.4rem;">🤖</span>
+                        <div class="markdown-body">
                             <h3>📖 ノートの内容を解説するよ！</h3>
                             <p>アップロードされたノートの内容を確認したよ！ポイントを整理して教えるね。</p>
                             
                             <h4>【重要ポイント・解法のコツ】</h4>
                             <ul>
-                                <li><strong>直線の交点と式：</strong> 直線 <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">l, m</span> の交点座標を連立方程式で求めるのが最初のステップだよ。</li>
+                                <li><strong>直線の交点と式：</strong> 直線 <span class="math-fallback-inline">l, m</span> の交点座標を連立方程式で求めるのが最初のステップだよ。</li>
                                 <li><strong>三角形の面積二等分：</strong> 頂点を通る直線で三角形の面積を2等分するときは、向かい合う辺の<strong>中点</strong>を通る直線の方程式を求めよう！</li>
-                                <li><strong>公式の確認：</strong> 底辺を <span class="math-fallback-inline" style="font-style:italic;">b</span>、高さを <span class="math-fallback-inline" style="font-style:italic;">h</span> とすると、面積は <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">S = ½bh</span> で計算できるね。</li>
+                                <li><strong>公式の確認：</strong> 底辺を <span class="math-fallback-inline">b</span>、高さを <span class="math-fallback-inline">h</span> とすると、面積は <span class="math-fallback-inline">S = ½bh</span> で計算できるね。</li>
                             </ul>
 
-                            <p style="margin-top: 14px; font-weight: bold; color: var(--accent-purple);">💬 直線 <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">l</span> や <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">m</span> の式で、分からないところや質問はあるかな？</p>
+                            <p style="margin-top: 14px; font-weight: bold; color: var(--accent-purple);">💬 直線 <span class="math-fallback-inline">l</span> や <span class="math-fallback-inline">m</span> の式で、分からないところや質問はあるかな？</p>
                         </div>
                     </div>
                 `;
@@ -1691,7 +1734,7 @@ function parseCustomMarkdown(text) {
         htmlLines.push(listType === 'ul' ? '</ul>' : '</ol>');
     }
 
-    return `<div class="markdown-body" style="line-height: 1.6; font-size: 0.9rem;">${htmlLines.join('\n')}</div>`;
+    return `<div class="markdown-body">${htmlLines.join('\n')}</div>`;
 }
 
 // ==========================================
@@ -1773,7 +1816,7 @@ function convertMarkdownToHtml(text) {
 
     // 数式記号を美しくレンダリング
     const finalHtml = renderMathFormulas(parsedHtml);
-    return `<div class="markdown-body learning-content-rendered" style="line-height: 1.7; font-size: 0.93rem;">${finalHtml}</div>`;
+    return `<div class="markdown-body learning-content-rendered">${finalHtml}</div>`;
 }
 
 // ==========================================
