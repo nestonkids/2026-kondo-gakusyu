@@ -239,42 +239,49 @@
 
         <!-- ✨ AIのピンポイント解説画面 -->
         <div id="ai-response-screen" class="screen">
-            <div class="glass-card" style="justify-content: flex-start; overflow-y: auto; padding: 28px; min-height: 85vh;">
-                <h2 class="screen-title" style="margin-bottom: 18px; align-self: flex-start; font-size: 1.5rem;">✨ AIのピンポイント解説授業</h2>
+            <div class="glass-card teaching-card-container">
+                <!-- ヘッダーエリア：タイトルと写真選び直しボタン -->
+                <div class="teaching-header">
+                    <h2 class="screen-title" style="margin-bottom: 0; font-size: 1.45rem;">✨ AIのピンポイント解説授業</h2>
+                    <button class="back-button header-action-btn" onclick="switchScreen('review')">📷 写真を選び直す</button>
+                </div>
                 
-                <div class="teaching-layout" style="gap: 28px;">
+                <div class="teaching-layout">
                     <!-- 左側：ノートプレビュー -->
-                    <div class="left-teaching-panel" style="flex: 1; display: flex; flex-direction: column; gap: 12px; max-width: 300px; width: 100%;">
-                        <h4 style="font-size: 1.0rem; font-weight: 700; color: #546e7a;">📷 アップロードしたノート</h4>
-                        <div style="border-radius: 20px; overflow: hidden; background: rgba(0,0,0,0.03); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; max-height: 380px; min-height: 240px; box-shadow: 0 4px 15px rgba(0,0,0,0.04);">
-                            <img id="teaching-image-preview" src="" alt="ノートプレビュー" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <div class="left-teaching-panel">
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #546e7a;">📷 アップロードしたノート</h4>
+                        <div class="teaching-image-box">
+                            <img id="teaching-image-preview" src="" alt="ノートプレビュー">
                         </div>
-                        <span style="font-size: 0.82rem; color: #7f8c8d; text-align: center;">※画像プレビュー</span>
+                        <span style="font-size: 0.8rem; color: #7f8c8d; text-align: center;">※画像プレビュー</span>
                     </div>
 
                     <!-- 右側：AIの指示エリア -->
-                    <div class="right-teaching-panel" style="flex: 2.5; display: flex; flex-direction: column; gap: 16px; width: 100%; height: 100%;">
+                    <div class="right-teaching-panel">
                         <!-- チャット欄 -->
-                        <div class="ai-chat-section" style="background: rgba(255, 255, 255, 0.65); border: 1px solid var(--glass-border); border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 16px; text-align: left; height: 100%; box-shadow: 0 6px 20px rgba(0,0,0,0.03);">
-                            <h4 style="font-size: 1.12rem; font-weight: 800; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 AIの解説授業（対話モード）</h4>
-                            <div id="ai-chat-log" style="display: flex; flex-direction: column; gap: 16px; flex: 1; overflow-y: auto; padding: 16px; background: rgba(255,255,255,0.45); border-radius: 18px; border: 1px solid rgba(155, 89, 182, 0.1); min-height: 460px;">
+                        <div class="ai-chat-section">
+                            <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 AIの解説授業（対話モード）</h4>
+                            
+                            <div id="ai-chat-log" class="teaching-chat-log">
                                 <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
                                     <span style="font-size: 1.3rem;">🤖</span>
                                     <div class="markdown-body"><p>アップロードされたノートについて何でも聞いてね。わからない部分や解説してほしい所があれば質問してください。</p></div>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 12px;">
-                                <input type="text" id="chat-question-input" placeholder="質問を入力してください...（例：平行線の求め方を教えて）" style="flex: 1; padding: 14px 18px; border-radius: 16px; border: 1px solid var(--glass-border); font-size: 1.0rem; outline: none; background: rgba(255,255,255,0.85);" onkeypress="handleChatKeyPress(event)">
-                                <button class="glass-button" style="padding: 12px 24px; font-size: 1.0rem; background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; border: none;" onclick="sendChatQuestion()">送信</button>
+
+                            <!-- 質問入力バー -->
+                            <div class="chat-input-row">
+                                <input type="text" id="chat-question-input" placeholder="質問を入力してください...（例：平行線の求め方を教えて）" onkeypress="handleChatKeyPress(event)">
+                                <button class="glass-button chat-send-btn" onclick="sendChatQuestion()">送信</button>
+                            </div>
+
+                            <!-- 次のアクション選択肢ボタン（練習問題・ホームへ戻る） -->
+                            <div class="teaching-action-buttons">
+                                <button class="start-plan-btn practice-action-btn" onclick="goToPracticeQuestions()">🎯 練習問題に挑戦する（5問）</button>
+                                <button class="start-plan-btn save-action-btn" onclick="saveWakaruSessionAndReturnHome()">💾 授業を完了してホームへ保存</button>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="screen-footer-actions" style="display: flex; gap: 14px; width: 100%; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.06); flex-wrap: wrap;">
-                    <button class="back-button" onclick="switchScreen('review')" style="background: rgba(255, 255, 255, 0.7); font-size: 0.95rem; padding: 10px 18px;">📷 写真を選び直す</button>
-                    <button class="start-plan-btn" onclick="goToPracticeQuestions()" style="background: linear-gradient(135deg, #3498db, #2980b9); box-shadow: 0 4px 15px rgba(52, 152, 219, 0.25); font-size: 0.95rem; padding: 10px 20px;">🎯 練習問題に挑戦する</button>
-                    <button class="start-plan-btn" onclick="saveWakaruSessionAndReturnHome()" style="background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 15px rgba(46, 204, 113, 0.25); font-size: 0.95rem; padding: 10px 20px;">💾 授業を完了してホームへ戻る</button>
                 </div>
             </div>
         </div>
@@ -328,37 +335,36 @@
 
         <!-- 📜 過去の学習履歴・対話詳細画面 -->
         <div id="history-chat-screen" class="screen">
-            <div class="glass-card" style="justify-content: flex-start; overflow-y: auto; padding: 25px;">
-                <h2 class="screen-title" id="history-chat-title" style="margin-bottom: 15px; align-self: flex-start;">✨ 過去の解説授業（履歴）</h2>
+            <div class="glass-card teaching-card-container">
+                <div class="teaching-header">
+                    <h2 class="screen-title" id="history-chat-title" style="margin-bottom: 0; font-size: 1.35rem;">✨ 過去の解説授業（履歴）</h2>
+                    <button class="back-button header-action-btn" onclick="switchScreen('home')">🏠 ホームへ戻る</button>
+                </div>
                 
                 <div class="teaching-layout">
                     <!-- 左側：ノートプレビュー -->
-                    <div class="left-teaching-panel" style="flex: 1; display: flex; flex-direction: column; gap: 12px; max-width: 350px; width: 100%;">
+                    <div class="left-teaching-panel">
                         <h4 style="font-size: 0.95rem; font-weight: 600; color: #546e7a;">📷 学習時のノートの資料</h4>
-                        <div id="history-image-container" style="flex: 1; border-radius: 18px; overflow: hidden; background: rgba(0,0,0,0.03); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; max-height: 320px; min-height: 200px; position: relative;">
-                            <img id="history-chat-image" src="" alt="ノートプレビュー" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                            <div id="history-chat-placeholder" class="hidden" style="font-size: 5rem; text-align: center;">📊</div>
+                        <div id="history-image-container" class="teaching-image-box">
+                            <img id="history-chat-image" src="" alt="ノートプレビュー">
+                            <div id="history-chat-placeholder" class="hidden" style="font-size: 4rem; text-align: center;">📊</div>
                         </div>
-                        <span id="history-chat-date" style="font-size: 0.85rem; color: #7f8c8d; text-align: center; font-weight: 600; margin-top: 5px;"></span>
+                        <span id="history-chat-date" style="font-size: 0.82rem; color: #7f8c8d; text-align: center; font-weight: 600; margin-top: 4px;"></span>
                     </div>
 
                     <!-- 右側：会話履歴エリア -->
-                    <div class="right-teaching-panel" style="flex: 1.5; display: flex; flex-direction: column; gap: 15px; width: 100%; height: 100%;">
-                        <div class="ai-chat-section" style="background: rgba(255, 255, 255, 0.55); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 15px; text-align: left; height: 100%;">
-                            <h4 style="font-size: 1rem; font-weight: 700; color: var(--accent-purple); display: flex; align-items: center; gap: 8px;">💬 授業中の会話ログ</h4>
-                            <div id="history-chat-log" style="display: flex; flex-direction: column; gap: 12px; flex: 1; overflow-y: auto; padding: 10px; background: rgba(255,255,255,0.3); border-radius: 16px; border: 1px solid rgba(0,0,0,0.02); min-height: 250px;">
+                    <div class="right-teaching-panel">
+                        <div class="ai-chat-section">
+                            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-purple); display: flex; align-items: center; gap: 8px; margin: 0;">💬 授業中の会話ログ</h4>
+                            <div id="history-chat-log" class="teaching-chat-log">
                                 <!-- チャット履歴が動的に表示されます -->
                             </div>
-                            <div style="display: flex; gap: 10px;">
-                                <input type="text" id="history-chat-input" placeholder="この会話の続きを質問する...（後日AI連携予定）" style="flex: 1; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--glass-border); font-size: 0.9rem; outline: none; background: rgba(255,255,255,0.7);" onkeypress="handleHistoryChatKeyPress(event)">
-                                <button class="glass-button" style="padding: 10px 20px; font-size: 0.9rem;" onclick="sendHistoryChatQuestion()">送信</button>
+                            <div class="chat-input-row">
+                                <input type="text" id="history-chat-input" placeholder="この会話の続きを質問する...（後日AI連携予定）" onkeypress="handleHistoryChatKeyPress(event)">
+                                <button class="glass-button chat-send-btn" onclick="sendHistoryChatQuestion()">送信</button>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="screen-footer-actions" style="display: flex; gap: 15px; width: 100%; justify-content: flex-end; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.06);">
-                    <button class="back-button" onclick="switchScreen('home')" style="width: 150px; background: rgba(255, 255, 255, 0.85);">🏠 ホームへ戻る</button>
                 </div>
             </div>
         </div>
