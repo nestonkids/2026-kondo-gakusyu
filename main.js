@@ -373,8 +373,6 @@ function clearFileSelect() {
 // 🚀 復習を開始する関数
 // ==========================================
 function startReviewProcess() {
-    const apiKey = localStorage.getItem('gemini-api-key');
-    
     // ローディング画面に切り替え
     switchScreen('loading');
     
@@ -392,8 +390,7 @@ function startReviewProcess() {
     
     const chatLog = document.getElementById('ai-chat-log');
     
-    const rawApiKey = localStorage.getItem('gemini-api-key') || '';
-    const apiKey = rawApiKey.trim();
+    const apiKey = getCleanApiKey();
 
     if (apiKey) {
         // 15個のカスタマイズプロファイルを生成
@@ -405,8 +402,17 @@ function startReviewProcess() {
         const parts = [];
 
         if (hasValidImage) {
-            const base64Data = imagePreview.src.split(',')[1];
-            const mimeType = imagePreview.src.split(';')[0].split(':')[1] || 'image/jpeg';
+            let base64Data = imagePreview.src.split(',')[1] || '';
+            let rawMime = (imagePreview.src.split(';')[0].split(':')[1] || 'image/jpeg').toLowerCase();
+            
+            // MIMEタイプの正規化
+            let cleanMime = 'image/jpeg';
+            if (rawMime.includes('png')) cleanMime = 'image/png';
+            else if (rawMime.includes('webp')) cleanMime = 'image/webp';
+            else if (rawMime.includes('heic') || rawMime.includes('heif')) cleanMime = 'image/jpeg';
+
+            // Base64文字列のサニタイズ
+            const cleanBase64 = base64Data.replace(/[\r\n\s]/g, '');
 
             systemPrompt = `あなたは親切でわかりやすい学習アシスタント「わかるくん」です。
 ユーザーがアップロードした勉強用ノート（またはプリント・教科書などの画像）を読み取り、生徒が深く理解できるように丁寧に解説授業を行ってください。
@@ -425,13 +431,14 @@ ${aiProfilePrompt}
    - Markdown形式（見出し ##、箇条書き、太字、数式など）を使って視認性抜群にレイアウトしてください。
    - ユーザーが設定したキャラクタープロファイル（口調、熱量、褒め方、例え話など）を100%忠実に守ってください。`;
 
-            parts.push({ text: systemPrompt });
+            // 画像パーツを先に配置（Gemini API推奨仕様）
             parts.push({
                 inline_data: {
-                    mime_type: mimeType,
-                    data: base64Data
+                    mime_type: cleanMime,
+                    data: cleanBase64
                 }
             });
+            parts.push({ text: systemPrompt });
         } else {
             // 画像なしでテキスト解説を求める場合
             systemPrompt = `あなたは親切でわかりやすい学習アシスタント「わかるくん」です。
@@ -454,6 +461,7 @@ ${aiProfilePrompt}
             }
         ];
 
+        // API呼び出し実行
         callGeminiAPI(contents).then((aiText) => {
             if (chatLog) {
                 chatLog.innerHTML = `
@@ -464,17 +472,48 @@ ${aiProfilePrompt}
                 `;
             }
             switchScreen('ai-response');
-        }).catch((err) => {
-            console.error('Gemini Review Error:', err);
+        }).catch(async (err) => {
+            console.warn('First attempt with image failed:', err);
+
+            // 画像付きで失敗した場合、テキストのみで自動再試行
+            if (hasValidImage) {
+                try {
+                    const fallbackContents = [
+                        {
+                            role: 'user',
+                            parts: [{ text: systemPrompt + "\n\n※画像の読み込みに失敗したため、テキスト中心に学習ガイダンスを行ってください。" }]
+                        }
+                    ];
+                    const fallbackText = await callGeminiAPI(fallbackContents);
+                    if (chatLog) {
+                        chatLog.innerHTML = `
+                            <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
+                                <span style="font-size: 1.2rem;">🤖</span>
+                                <div>
+                                    <div style="font-size: 0.8rem; color: #e67e22; background: rgba(230, 126, 34, 0.1); padding: 4px 8px; border-radius: 6px; margin-bottom: 8px;">※写真の解析通信で制限が出たため、テキストガイダンスモードで開始しました</div>
+                                    ${convertMarkdownToHtml(fallbackText)}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    switchScreen('ai-response');
+                    return;
+                } catch (err2) {
+                    console.error('Fallback text-only also failed:', err2);
+                }
+            }
+
+            // エラー表示と復旧ボタン
             if (chatLog) {
                 chatLog.innerHTML = `
                     <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
                         <span style="font-size: 1.2rem;">🤖</span>
-                        <div>
-                            <p style="color: #e74c3c; font-weight: bold; margin-bottom: 8px;">⚠️ Gemini APIによる解説の取得に失敗しました</p>
-                            <p style="font-size: 0.88rem; color: #546e7a; margin-bottom: 10px;">${escapeHtml(err.message)}</p>
-                            <div style="font-size: 0.82rem; background: rgba(0,0,0,0.04); padding: 8px 12px; border-radius: 8px;">
-                                💡 <strong>対処法:</strong> 右上の「⚙️」設定画面を開き、APIキーが正しいか確認するか、「⚡ 接続テストを実行」ボタンで通信状態をチェックしてください。
+                        <div style="width: 100%;">
+                            <p style="color: #e74c3c; font-weight: bold; margin-bottom: 6px;">⚠️ AI解説の通信でエラーが発生しました</p>
+                            <div style="font-size: 0.85rem; color: #546e7a; margin-bottom: 10px; background: rgba(0,0,0,0.03); padding: 8px 10px; border-radius: 8px; font-family: monospace; white-space: pre-wrap;">${escapeHtml(err.message)}</div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                                <button onclick="startReviewProcess()" class="glass-button" style="padding: 6px 14px; font-size: 0.85rem; background: var(--accent-blue); color: white; border: none;">🔄 もう一度再試行</button>
+                                <button onclick="switchScreen('settings')" class="glass-button" style="padding: 6px 14px; font-size: 0.85rem;">⚙️ 設定画面で診断する</button>
                             </div>
                         </div>
                     </div>
@@ -1318,12 +1357,23 @@ function loadSettings() {
 // 🌐 Gemini API 連携ユーティリティ
 // ==========================================
 
+function getCleanApiKey() {
+    const inputEl = document.getElementById('gemini-api-key');
+    let raw = (inputEl && inputEl.value ? inputEl.value : (localStorage.getItem('gemini-api-key') || '')).trim();
+    // 引用符やスペースを除去
+    raw = raw.replace(/^["'`]+|["'`]+$/g, '').trim();
+    return raw;
+}
+
 /**
  * APIキーを使って利用可能なGeminiモデル一覧を取得する
  */
 async function fetchAvailableGeminiModels(apiKey) {
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+        const cleanKey = apiKey ? apiKey.replace(/^["'`]+|["'`]+$/g, '').trim() : getCleanApiKey();
+        if (!cleanKey) return [];
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`;
         const response = await fetch(url);
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
@@ -1349,8 +1399,7 @@ async function fetchAvailableGeminiModels(apiKey) {
  * Gemini API を安全に呼び出す（動的モデル探索＆自動フォールバック付き）
  */
 async function callGeminiAPI(contents, preferredModel = null) {
-    const rawApiKey = localStorage.getItem('gemini-api-key') || '';
-    const apiKey = rawApiKey.trim();
+    const apiKey = getCleanApiKey();
     if (!apiKey) {
         throw new Error('Gemini APIキーが設定されていません。右上の「⚙️」設定画面でAPIキーを入力して保存してください。');
     }
@@ -1388,13 +1437,19 @@ async function callGeminiAPI(contents, preferredModel = null) {
     for (const model of candidateModels) {
         try {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ contents })
-            });
+            let response;
+            try {
+                response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ contents })
+                });
+            } catch (fetchErr) {
+                // ネットワーク遮断（CORS、広告ブロッカー、オフライン等）
+                throw new Error(`Google APIサーバーとの通信に失敗しました (Failed to fetch)。\n原因の可能性: ブラウザの拡張機能（広告ブロック等）による通信遮断、またはネットワークの接続制限。`);
+            }
 
             if (response.ok) {
                 const data = await response.json();
@@ -1433,8 +1488,8 @@ async function callGeminiAPI(contents, preferredModel = null) {
             throw new Error(`Gemini APIエラー (${statusCode}): ${rawMsg}`);
         } catch (e) {
             lastError = e;
-            // 認証エラーやレートリミットは即座に中断
-            if (e.message.includes('APIキーが無効') || e.message.includes('アクセス権限が拒否') || e.message.includes('利用制限')) {
+            // 認証エラーやレートリミット、通信エラーは即座に中断
+            if (e.message.includes('APIキーが無効') || e.message.includes('アクセス権限が拒否') || e.message.includes('利用制限') || e.message.includes('Failed to fetch')) {
                 throw e;
             }
         }
@@ -1453,7 +1508,7 @@ async function testGeminiAPIConnection() {
 
     if (!resultEl) return;
 
-    const rawKey = apiKeyInput ? apiKeyInput.value.trim() : (localStorage.getItem('gemini-api-key') || '').trim();
+    const rawKey = getCleanApiKey();
 
     if (!rawKey) {
         resultEl.innerHTML = '<div style="background: rgba(231,76,60,0.12); border: 1px solid #e74c3c; border-radius: 10px; padding: 10px 14px; color: #c0392b; font-weight: 600; font-size: 0.88rem;">⚠️ APIキーを入力してください。</div>';
@@ -1470,6 +1525,9 @@ async function testGeminiAPIConnection() {
     resultEl.style.display = 'block';
 
     try {
+        // 保存も同時に行う
+        localStorage.setItem('gemini-api-key', rawKey);
+
         // ステップ1: キーの有効性と利用可能モデルの確認
         const models = await fetchAvailableGeminiModels(rawKey);
         
@@ -1484,7 +1542,6 @@ async function testGeminiAPIConnection() {
             }
         ];
 
-        localStorage.setItem('gemini-api-key', rawKey);
         const reply = await callGeminiAPI(testContents, selectedModel);
         const activeModel = localStorage.getItem('gemini-model') || selectedModel;
 
@@ -1505,11 +1562,11 @@ async function testGeminiAPIConnection() {
         resultEl.innerHTML = `
             <div style="background: rgba(231, 76, 60, 0.15); border: 1px solid #e74c3c; border-radius: 12px; padding: 12px 14px; color: #c0392b; font-weight: 600; font-size: 0.9rem; line-height: 1.45;">
                 ❌ <strong>接続テスト失敗</strong><br>
-                <div style="font-size: 0.85rem; margin-top: 4px; font-weight: normal; color: #7f1d1d;">${escapeHtml(err.message)}</div>
+                <div style="font-size: 0.85rem; margin-top: 4px; font-weight: normal; color: #7f1d1d; white-space: pre-wrap;">${escapeHtml(err.message)}</div>
                 <div style="margin-top: 8px; font-size: 0.8rem; color: #546e7a; font-weight: normal;">
                     💡 <strong>確認ポイント:</strong><br>
-                    ・Google AI Studio (<a href="https://aistudio.google.com/" target="_blank" style="color: #2980b9;">aistudio.google.com</a>) で「Create API key」から取得したキーか確認してください。<br>
-                    ・キーの先頭や末尾に不要な文字や余白が含まれていないか「👁️」ボタンで確認してください。
+                    ・Google AI Studio (<a href="https://aistudio.google.com/" target="_blank" style="color: #2980b9;">aistudio.google.com</a>) で「Create API key」から取得した「AIzaSy...」で始まるキーか確認してください。<br>
+                    ・キーの先頭や末尾に余分な文字が含まれていないか「👁️」ボタンで確認してください。
                 </div>
             </div>
         `;
