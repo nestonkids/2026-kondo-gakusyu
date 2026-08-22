@@ -1000,11 +1000,11 @@ function startTest() {
 
     currentTestQuestions = [
         {
-            title: `【問 1】 (${subjectName}) 次の計算に答えよ: 15 × 6 - 25`,
+            title: `【問 1】 (${subjectName}) 次の計算に答えよ: $15 \\times 6 - 25$`,
             answer: '65',
             type: 'short',
             points: 30,
-            explanation: '15 × 6 = 90、90 - 25 = 65 です。'
+            explanation: '$15 \\times 6 = 90$、$90 - 25 = 65$ です。'
         },
         {
             title: `【問 2】 (英語) 「私は昨日勉強しました」の英文の空欄に入る単語を答えよ: I ( _______ ) yesterday.`,
@@ -1027,17 +1027,27 @@ function startTest() {
     currentTestQuestions.forEach((q, idx) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'test-question-item';
-        itemDiv.style.marginBottom = '20px';
+        itemDiv.style.marginBottom = '25px';
+        itemDiv.style.paddingBottom = '20px';
+        itemDiv.style.borderBottom = '1px dashed rgba(0,0,0,0.12)';
+
+        const titleHtml = renderMathFormulas(processInlineMarkdown(escapeHtml(q.title)));
+        const explanationHtml = renderMathFormulas(processInlineMarkdown(escapeHtml(q.explanation)));
+
         itemDiv.innerHTML = `
-            <div class="q-title" style="font-weight: bold; margin-bottom: 8px;">
-                ${escapeHtml(q.title)} <span class="q-points" style="color: #7f8c8d; font-size: 0.85rem;">（${q.points}点）</span>
+            <div class="q-title" style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; line-height: 1.6; color: var(--text-color);">
+                ${titleHtml} <span class="q-points" style="color: #7f8c8d; font-size: 0.85rem; font-weight: normal;">（${q.points}点）</span>
             </div>
-            <div class="q-answer-area" style="margin-bottom: 8px;">
-                答：<input type="text" id="test-q-${idx}" placeholder="解答を入力" class="q-input-medium" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--glass-border); width: 100%; max-width: 320px; font-size: 16px; box-sizing: border-box;">
+            <div class="q-answer-area">
+                <span style="font-weight: 600; color: #546e7a;">答：</span>
+                <input type="text" id="test-q-${idx}" placeholder="解答を入力" class="q-input-medium">
             </div>
-            <div class="q-feedback hidden" id="test-fb-${idx}" style="padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.6); margin-top: 6px;">
-                <span class="grade-mark" style="font-weight: bold; font-size: 1.2rem; margin-right: 8px;"></span>
-                <span class="q-explanation" style="font-size: 0.9rem; color: #34495e;">${q.explanation}</span>
+            <div class="q-feedback hidden" id="test-fb-${idx}">
+                <div class="feedback-header">
+                    <span class="grade-mark mark-correct">◯</span>
+                    <strong class="grade-text" style="font-size: 0.95rem;">正解</strong>
+                </div>
+                <div class="q-explanation">${explanationHtml}</div>
             </div>
         `;
         container.appendChild(itemDiv);
@@ -1065,9 +1075,14 @@ function gradeTest() {
         if (fbEl) {
             fbEl.classList.remove('hidden');
             const markEl = fbEl.querySelector('.grade-mark');
+            const textEl = fbEl.querySelector('.grade-text');
             if (markEl) {
-                markEl.textContent = isCorrect ? '◯ 正解' : '✗ 不正解';
-                markEl.style.color = isCorrect ? '#2ecc71' : '#e74c3c';
+                markEl.textContent = isCorrect ? '◯' : '✕';
+                markEl.className = isCorrect ? 'grade-mark mark-correct' : 'grade-mark mark-incorrect';
+            }
+            if (textEl) {
+                textEl.textContent = isCorrect ? `正解！（+${q.points}点）` : `不正解（正解: ${q.answer}）`;
+                textEl.style.color = isCorrect ? '#27ae60' : '#c0392b';
             }
         }
         if (inputEl) inputEl.readOnly = true;
@@ -2078,13 +2093,15 @@ async function goToPracticeQuestions() {
 ${learnedContent}
 
 【絶対ルール】
-必ず長さ5のJSON配列形式のみを出力してください。説明テキストやMarkdownのコードブロック記法(\`\`\`json ...)は一切付けず、純粋なJSONのみを返してください。
+1. 必ず長さ5のJSON配列形式のみを出力してください。説明テキストやMarkdownのコードブロック記法(\`\`\`json ...)は一切付けず、純粋なJSONのみを返してください。
+2. 【超重要】title（問題文）には問題文の本題のみを書き、選択肢（A.〜や①〜など）を問題文の中に含めないでください。選択肢は必ず options 配列にのみ記述してください。
+3. 数式や記号は必ず LaTeX 形式（$数式$）で記述してください。
 
 各要素のキー構造:
 [
   {
     "id": 1,
-    "title": "問題文を記述",
+    "title": "問題文を記述（選択肢を含めない）",
     "type": "choice", 
     "options": ["A. 選択肢1", "B. 選択肢2", "C. 選択肢3", "D. 選択肢4"],
     "answer": "A. 選択肢1",
@@ -2135,43 +2152,43 @@ function generateFallbackPracticeQuestions(learnedContentText) {
         return [
             {
                 id: 1,
-                title: "二次関数 y = (x - 3)² - 4 の頂点の座標を求めよ。",
+                title: "二次関数 $y = (x - 3)^2 - 4$ の頂点の座標を求めよ。",
                 type: "choice",
-                options: ["(3, -4)", "(-3, -4)", "(3, 4)", "(-3, 4)"],
-                answer: "(3, -4)",
-                explanation: "y = a(x - p)² + q の頂点は (p, q) です。したがって (3, -4) が正解です。"
+                options: ["$(3, -4)$", "$(-3, -4)$", "$(3, 4)$", "$(-3, 4)$"],
+                answer: "$(3, -4)$",
+                explanation: "$y = a(x - p)^2 + q$ の頂点は $(p, q)$ です。したがって $(3, -4)$ が正解です。"
             },
             {
                 id: 2,
-                title: "x² - 6x を平方完成した正しい形を選べ。",
+                title: "$x^2 - 6x$ を平方完成した正しい形を選べ。",
                 type: "choice",
-                options: ["(x - 3)² - 9", "(x - 3)² + 9", "(x - 6)² - 36", "(x - 3)² - 6"],
-                answer: "(x - 3)² - 9",
-                explanation: "xの係数-6の半分は-3です。(x - 3)² - (-3)² = (x - 3)² - 9 と変形します。"
+                options: ["$(x - 3)^2 - 9$", "$(x - 3)^2 + 9$", "$(x - 6)^2 - 36$", "$(x - 3)^2 - 6$"],
+                answer: "$(x - 3)^2 - 9$",
+                explanation: "$x$の係数 $-6$ の半分は $-3$ です。$(x - 3)^2 - (-3)^2 = (x - 3)^2 - 9$ と変形します。"
             },
             {
                 id: 3,
-                title: "二次関数 y = -2(x + 1)² + 5 のグラフの軸の方程式を選べ。",
+                title: "二次関数 $y = -2(x + 1)^2 + 5$ のグラフの軸の方程式を選べ。",
                 type: "choice",
-                options: ["x = -1", "x = 1", "y = 5", "x = -2"],
-                answer: "x = -1",
-                explanation: "y = a(x - p)² + q の軸は x = p です。y = -2(x - (-1))² + 5 より軸は x = -1 です。"
+                options: ["$x = -1$", "$x = 1$", "$y = 5$", "$x = -2$"],
+                answer: "$x = -1$",
+                explanation: "$y = a(x - p)^2 + q$ の軸は $x = p$ です。$y = -2(x - (-1))^2 + 5$ より軸は $x = -1$ です。"
             },
             {
                 id: 4,
-                title: "二次関数 y = ax² + bx + c において、a < 0 のときグラフの形状はどのようになるか？",
+                title: "二次関数 $y = ax^2 + bx + c$ において、$a < 0$ のときグラフの形状はどのようになるか？",
                 type: "choice",
                 options: ["上に凸（山型）", "下に凸（谷型）", "直線", "右上がりの直線"],
                 answer: "上に凸（山型）",
-                explanation: "x²の係数 a が負(a < 0)のとき、グラフは上に凸（山型）になります。"
+                explanation: "$x^2$の係数 $a$ が負($a < 0$)のとき、グラフは上に凸（山型）になります。"
             },
             {
                 id: 5,
-                title: "二次関数 y = x² - 4x + 5 の y切片（x=0のときのyの値）を求めよ。",
+                title: "二次関数 $y = x^2 - 4x + 5$ の $y$切片（$x=0$のときの$y$の値）を求めよ。",
                 type: "choice",
-                options: ["5", "-4", "1", "0"],
-                answer: "5",
-                explanation: "x = 0 を代入すると y = 0 - 0 + 5 = 5 となります。"
+                options: ["$5$", "$-4$", "$1$", "$0$"],
+                answer: "$5$",
+                explanation: "$x = 0$ を代入すると $y = 0 - 0 + 5 = 5$ となります。"
             }
         ];
     }
@@ -2318,11 +2335,11 @@ function generateFallbackPracticeQuestions(learnedContentText) {
     return [
         {
             id: 1,
-            title: "【数学】二次関数 y = (x - 2)² + 3 の頂点の座標を求めよ。",
+            title: "【数学】二次関数 $y = (x - 2)^2 + 3$ の頂点の座標を求めよ。",
             type: "choice",
-            options: ["(2, 3)", "(-2, 3)", "(2, -3)", "(-2, -3)"],
-            answer: "(2, 3)",
-            explanation: "y = a(x - p)² + q の頂点は (p, q) です。(2, 3) が正解です。"
+            options: ["$(2, 3)$", "$(-2, 3)$", "$(2, -3)$", "$(-2, -3)$"],
+            answer: "$(2, 3)$",
+            explanation: "$y = a(x - p)^2 + q$ の頂点は $(p, q)$ です。$(2, 3)$ が正解です。"
         },
         {
             id: 2,
@@ -2360,6 +2377,57 @@ function generateFallbackPracticeQuestions(learnedContentText) {
 }
 
 /**
+ * 問題文の整形（タイトル内の重複選択肢除去）
+ */
+function cleanQuestionTitle(rawTitle, options = []) {
+    if (!rawTitle) return '';
+    let title = rawTitle.trim();
+
+    // 先頭の 【問 1】 や 問1. などを除去
+    title = title.replace(/^【問\s*\d+】\s*/, '').replace(/^問\s*\d+[:\.\s]\s*/, '').trim();
+
+    // 問題文末尾に A.〜, B.〜 などの選択肢リストが連結されている場合を分離・除去
+    title = title.replace(/\n\s*([A-Da-d1-4①-④]\.|\([A-Da-d1-4①-④]\)|[①-④])[\s\S]*$/m, '').trim();
+
+    if (Array.isArray(options) && options.length > 0) {
+        for (const opt of options) {
+            const cleanOpt = opt.replace(/^[A-Da-d1-4①-④][\.\)\s]*/, '').trim();
+            if (cleanOpt.length >= 2 && title.includes(cleanOpt)) {
+                const optIdx = title.indexOf(cleanOpt);
+                if (optIdx > title.length * 0.35) {
+                    const candidate = title.substring(0, optIdx).replace(/[\s\n\(\[A-Da-d1-4①-④\.\:：]+$/, '').trim();
+                    if (candidate.length >= 4) {
+                        title = candidate;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return title;
+}
+
+/**
+ * 選択肢のラジオ選択ハイライト
+ */
+function highlightSelectedChoice(radioEl) {
+    if (!radioEl) return;
+    const name = radioEl.name;
+    const allInGroup = document.querySelectorAll(`input[name="${name}"]`);
+    allInGroup.forEach(r => {
+        const card = r.closest('.choice-option-card');
+        if (card) {
+            if (r.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        }
+    });
+}
+
+/**
  * 5問の練習問題を画面(practice-questions-container)へレンダリング
  */
 function renderPracticeQuestions(questions) {
@@ -2393,21 +2461,25 @@ function renderPracticeQuestions(questions) {
 
     questions.forEach((q, idx) => {
         const qNum = idx + 1;
+        const cleanTitle = cleanQuestionTitle(q.title, q.options);
+        const titleHtml = renderMathFormulas(processInlineMarkdown(escapeHtml(cleanTitle)));
+
         html += `
-            <div class="test-question-item" id="pq-item-${qNum}" style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px dashed #e0e0e0;">
-                <div class="q-title" style="font-size: 1.05rem; font-weight: bold; margin-bottom: 12px; line-height: 1.5;">
-                    <span class="q-num" style="color: #2980b9;">【問 ${qNum}】</span> ${escapeHtml(q.title)} <span class="q-points" style="font-size: 0.85rem; color: #7f8c8d;">（20点）</span>
+            <div class="test-question-item" id="pq-item-${qNum}" style="margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px dashed rgba(0,0,0,0.12);">
+                <div class="q-title" style="font-size: 1.05rem; font-weight: 700; margin-bottom: 14px; line-height: 1.7; color: var(--text-color);">
+                    <span class="q-num" style="color: var(--accent-blue); font-weight: 800; margin-right: 6px;">【問 ${qNum}】</span> ${titleHtml} <span class="q-points" style="font-size: 0.85rem; color: #7f8c8d; font-weight: normal; margin-left: 4px;">（20点）</span>
                 </div>
         `;
 
         if (q.type === 'choice' && Array.isArray(q.options)) {
-            html += `<div class="q-answer-area" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; width: 100%;">`;
+            html += `<div class="choice-options-list">`;
             q.options.forEach((opt, optIdx) => {
                 const radioId = `pq_${qNum}_opt_${optIdx}`;
+                const formattedOpt = renderMathFormulas(processInlineMarkdown(escapeHtml(opt)));
                 html += `
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95rem; background: rgba(245,247,250,0.85); padding: 10px 14px; border-radius: 10px; border: 1px solid #e2e8f0; transition: all 0.2s; width: 100%; box-sizing: border-box;">
-                        <input type="radio" name="pq_ans_${qNum}" id="${radioId}" value="${escapeHtml(opt)}" style="transform: scale(1.15); cursor: pointer; flex-shrink: 0;">
-                        <span style="flex: 1; word-break: break-word;">${escapeHtml(opt)}</span>
+                    <label class="choice-option-card" for="${radioId}">
+                        <input type="radio" name="pq_ans_${qNum}" id="${radioId}" value="${escapeHtml(opt)}" class="choice-radio-input" onchange="highlightSelectedChoice(this)">
+                        <span class="choice-option-text">${formattedOpt}</span>
                     </label>
                 `;
             });
@@ -2415,22 +2487,26 @@ function renderPracticeQuestions(questions) {
         } else {
             // テキスト入力形式
             html += `
-                <div class="q-answer-area" style="margin-top: 10px; width: 100%;">
-                    答：<input type="text" id="pq_ans_text_${qNum}" placeholder="解答を入力してください" class="q-input-long" style="width: 100%; max-width: 400px; padding: 8px 12px; font-size: 16px; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;">
+                <div class="q-answer-area">
+                    <span style="font-weight: 600; color: #546e7a;">答：</span>
+                    <input type="text" id="pq_ans_text_${qNum}" placeholder="解答を入力してください" class="q-input-long">
                 </div>
             `;
         }
 
+        const formattedExplanation = renderMathFormulas(processInlineMarkdown(escapeHtml(q.explanation || '')));
+        const formattedAnswer = renderMathFormulas(processInlineMarkdown(escapeHtml(q.answer || '')));
+
         // フィードバック＆解説エリア（初期非表示）
         html += `
-                <div class="q-feedback hidden" id="pq-feedback-${qNum}" style="margin-top: 12px; padding: 12px; border-radius: 8px; background: rgba(241, 245, 249, 0.9); border-left: 4px solid #3b82f6;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="grade-mark mark-correct" style="font-size: 1.4rem; font-weight: bold;">◯</span>
-                        <strong style="font-size: 0.95rem;">【正解】: ${escapeHtml(q.answer)}</strong>
+                <div class="q-feedback hidden" id="pq-feedback-${qNum}">
+                    <div class="feedback-header">
+                        <span class="grade-mark mark-correct">◯</span>
+                        <strong class="grade-text" style="font-size: 0.98rem; color: var(--text-color);">【正解】: ${formattedAnswer}</strong>
                     </div>
-                    <div class="q-explanation" style="margin-top: 6px; font-size: 0.9rem; color: #334155; line-height: 1.5;">
-                        <strong>【解説】</strong><br>
-                        ${escapeHtml(q.explanation)}
+                    <div class="q-explanation">
+                        <strong style="color: #475569;">【解説】</strong><br>
+                        ${formattedExplanation}
                     </div>
                 </div>
             </div>
@@ -2486,16 +2562,15 @@ async function gradePracticeTest() {
         if (feedbackEl) {
             feedbackEl.classList.remove('hidden');
             const markEl = feedbackEl.querySelector('.grade-mark');
+            const textEl = feedbackEl.querySelector('.grade-text');
             if (markEl) {
-                if (isCorrect) {
-                    markEl.textContent = '◯';
-                    markEl.className = 'grade-mark mark-correct';
-                    markEl.style.color = '#2ecc71';
-                } else {
-                    markEl.textContent = '✕';
-                    markEl.className = 'grade-mark mark-incorrect';
-                    markEl.style.color = '#e74c3c';
-                }
+                markEl.textContent = isCorrect ? '◯' : '✕';
+                markEl.className = isCorrect ? 'grade-mark mark-correct' : 'grade-mark mark-incorrect';
+            }
+            if (textEl) {
+                const formattedAnswer = renderMathFormulas(processInlineMarkdown(escapeHtml(q.answer || '')));
+                textEl.innerHTML = isCorrect ? `正解！（+20点）` : `不正解（【正解】: ${formattedAnswer}）`;
+                textEl.style.color = isCorrect ? '#27ae60' : '#c0392b';
             }
         }
 

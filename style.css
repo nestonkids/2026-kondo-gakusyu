@@ -12,6 +12,13 @@
 html {
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #e0f2fe 100%) no-repeat center center fixed;
+    background-size: cover;
+    background-color: #e0f2fe;
+    min-height: 100%;
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+    overscroll-behavior: none;
 }
 
 * {
@@ -23,7 +30,9 @@ html {
 }
 
 body {
-    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #e0f2fe 100%);
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #e0f2fe 100%) no-repeat center center fixed;
+    background-size: cover;
+    background-color: #e0f2fe;
     color: var(--text-color);
     min-height: 100vh;
     min-height: 100dvh;
@@ -31,6 +40,8 @@ body {
     justify-content: center;
     align-items: center;
     overflow-x: hidden;
+    overscroll-behavior-y: none;
+    overscroll-behavior: none;
 }
 
 /* 背景のアニメーション玉 */
@@ -342,13 +353,15 @@ body {
     display: flex;
     gap: 14px;
     width: 100%;
-    max-width: 440px;
-    margin: 10px 0 4px;
+    max-width: 460px;
+    margin: 12px auto 6px;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
 .choice-action-card {
-    flex: 1;
+    flex: 1 1 180px;
+    min-width: 160px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -360,6 +373,7 @@ body {
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
     text-align: left;
+    box-sizing: border-box;
 }
 
 .choice-action-card:hover {
@@ -796,12 +810,69 @@ body {
 }
 
 .q-answer-area {
-    padding-left: 20px;
-    font-size: 1.05rem;
+    padding-left: 0;
+    font-size: 1.02rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 12px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 🔘 選択肢（ラジオボタン・カード）スタイル */
+.choice-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.choice-option-card {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(248, 250, 252, 0.9);
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.choice-option-card:hover {
+    background: #ffffff;
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+}
+
+.choice-option-card:has(input[type="radio"]:checked),
+.choice-option-card.selected {
+    background: #eff6ff;
+    border-color: #2563eb;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.18);
+}
+
+.choice-radio-input {
+    appearance: auto;
+    -webkit-appearance: auto;
+    width: 18px;
+    height: 18px;
+    accent-color: #2563eb;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.choice-option-text {
+    flex: 1;
+    font-size: 0.96rem;
+    color: var(--text-color);
+    line-height: 1.5;
+    word-break: break-word;
 }
 
 .q-input-short {
@@ -852,13 +923,16 @@ body {
 }
 
 .q-feedback {
-    margin-top: 15px;
+    margin-top: 16px;
     background: #f8fafc;
     border-left: 4px solid #3498db;
-    padding: 12px 18px;
-    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    border-radius: 0 10px 10px 0;
     position: relative;
     animation: slideDown 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 @keyframes slideDown {
@@ -866,32 +940,37 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+.feedback-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .grade-mark {
-    position: absolute;
-    top: -20px;
-    right: 20px;
-    font-size: 3.8rem;
-    font-weight: bold;
-    user-select: none;
-    pointer-events: none;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
     line-height: 1;
+    position: static;
+    user-select: none;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    flex-shrink: 0;
 }
 
 .mark-correct {
-    color: rgba(231, 76, 60, 0.8);
-    transform: scale(1.1);
+    color: #2ecc71;
 }
 
 .mark-incorrect {
-    color: rgba(231, 76, 60, 0.8);
-    font-weight: 300;
+    color: #e74c3c;
 }
 
 .q-explanation {
-    font-size: 0.88rem;
-    color: #475569;
-    line-height: 1.5;
+    font-size: 0.9rem;
+    color: #334155;
+    line-height: 1.6;
     text-align: left;
     font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
 }
@@ -1495,18 +1574,17 @@ body {
     }
 
     .q-feedback {
-        padding: 10px 12px;
-        margin-top: 10px;
+        padding: 12px 14px;
+        margin-top: 12px;
     }
 
     .grade-mark {
-        font-size: 2.2rem;
-        top: -12px;
-        right: 10px;
+        font-size: 1.4rem;
+        position: static;
     }
 
     .q-explanation {
-        font-size: 0.82rem;
+        font-size: 0.85rem;
     }
 
     .test-actions {
