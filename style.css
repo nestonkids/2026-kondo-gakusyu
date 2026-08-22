@@ -9,17 +9,24 @@
     --accent-purple: #9b59b6;
 }
 
+html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
     font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
     background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #e0f2fe 100%);
     color: var(--text-color);
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -394,16 +401,6 @@ body {
     min-height: 0;
 }
 
-@media (max-width: 768px) {
-    .teaching-layout {
-        flex-direction: column;
-        overflow-y: auto;
-    }
-    .left-teaching-panel {
-        max-width: 100% !important;
-    }
-}
-
 .chat-message {
     margin-bottom: 8px;
     animation: fadeIn 0.3s ease-out;
@@ -413,28 +410,30 @@ body {
     margin: 0;
 }
 
-.chat-message.ai p {
+.chat-message.ai p,
+.chat-message.ai > div {
     background: white;
     color: var(--text-color);
     padding: 10px 14px;
     border-radius: 16px;
     border-top-left-radius: 4px;
-    font-size: 0.85rem;
-    max-width: 280px;
-    line-height: 1.4;
+    font-size: 0.88rem;
+    max-width: 85%;
+    line-height: 1.45;
     border: 1px solid rgba(0, 0, 0, 0.05);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
 }
 
-.chat-message.user p {
+.chat-message.user p,
+.chat-message.user > div {
     background: var(--accent-blue);
     color: white;
     padding: 10px 14px;
     border-radius: 16px;
     border-top-right-radius: 4px;
-    font-size: 0.85rem;
-    max-width: 280px;
-    line-height: 1.4;
+    font-size: 0.88rem;
+    max-width: 85%;
+    line-height: 1.45;
     box-shadow: 0 2px 6px rgba(52, 152, 219, 0.15);
 }
 
@@ -858,3 +857,609 @@ body {
     transform: translateX(4px);
     color: var(--accent-blue);
 }
+
+/* ==========================================
+   📱 モバイル・タブレット向けレスポンシブ対応
+========================================== */
+@media (max-width: 860px) {
+    /* 📦 全体レイアウト */
+    body {
+        align-items: flex-start;
+        padding: 10px 8px 30px;
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: calc(100dvh - 40px);
+        margin: 0 auto;
+        padding: 0;
+        display: block;
+    }
+
+    .screen {
+        position: relative;
+        width: 100%;
+        height: auto;
+        min-height: calc(100dvh - 40px);
+        opacity: 1;
+        transform: none;
+        display: none;
+    }
+
+    .screen.active {
+        display: flex;
+        opacity: 1;
+        transform: none;
+    }
+
+    .glass-card {
+        padding: 20px 14px;
+        border-radius: 24px;
+        height: auto;
+        min-height: calc(100dvh - 40px);
+        justify-content: flex-start;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        box-sizing: border-box;
+    }
+
+    /* 🏠 ホーム画面 */
+    .home-layout {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 20px;
+        height: auto;
+    }
+
+    .left-panel {
+        flex: none;
+        width: 100%;
+    }
+
+    .left-panel .quick-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .action-card {
+        padding: 14px 16px;
+        border-radius: 18px;
+        min-height: 58px;
+        gap: 12px;
+    }
+
+    .action-image {
+        width: 36px;
+    }
+
+    .action-icon-styled {
+        font-size: 1.7rem;
+        width: 36px;
+    }
+
+    .action-text h3 {
+        font-size: 1.05rem;
+        line-height: 1.25;
+    }
+
+    .right-panel {
+        flex: none;
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        padding-left: 0;
+        padding-top: 18px;
+    }
+
+    .panel-subtitle {
+        font-size: 1.15rem;
+        margin-bottom: 10px;
+    }
+
+    .search-box-container {
+        padding: 8px 12px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+
+    #search-input {
+        font-size: 16px; /* iOSフォーカス時ズーム防止 */
+    }
+
+    .subject-filter-container {
+        gap: 6px;
+        margin-bottom: 14px;
+        padding-bottom: 6px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .subject-filter-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-btn {
+        padding: 6px 12px;
+        font-size: 0.82rem;
+        border-radius: 10px;
+    }
+
+    .history-list-container.horizontal-scroll {
+        padding: 6px 2px;
+        gap: 10px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .history-card-horizontal {
+        flex: 0 0 120px;
+        height: 160px;
+        padding: 12px 8px;
+        border-radius: 18px;
+    }
+
+    .card-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 1.4rem;
+        border-radius: 10px;
+    }
+
+    .history-date {
+        font-size: 0.65rem;
+    }
+
+    .history-title {
+        font-size: 0.82rem;
+        -webkit-line-clamp: 2;
+    }
+
+    /* 🧠 AI復習プラン画面 */
+    .planner-screen-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        max-width: 100%;
+        margin-bottom: 15px;
+    }
+
+    .planner-screen-header .screen-title {
+        font-size: 1.25rem;
+        margin-bottom: 0;
+        text-align: left;
+    }
+
+    .time-tabs {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .time-tab {
+        flex: 1;
+        text-align: center;
+        padding: 8px 6px;
+        font-size: 0.85rem;
+    }
+
+    .ai-stats-row {
+        flex-direction: column;
+        gap: 10px;
+        max-width: 100%;
+        margin-bottom: 16px;
+    }
+
+    .stat-box {
+        padding: 10px 14px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        margin-bottom: 0;
+    }
+
+    .stat-value {
+        font-size: 1.15rem;
+    }
+
+    .stat-value.text-small {
+        font-size: 0.9rem;
+        margin-top: 0;
+    }
+
+    .plan-content-box.big-box {
+        padding: 18px 14px;
+        max-width: 100%;
+        gap: 14px;
+        border-radius: 18px;
+        margin-bottom: 20px;
+    }
+
+    .plan-summary {
+        font-size: 0.92rem;
+        line-height: 1.45;
+    }
+
+    .start-plan-btn {
+        width: 100%;
+        padding: 12px 18px;
+        font-size: 0.95rem;
+        box-sizing: border-box;
+    }
+
+    /* 📖 復習・アップロード画面 */
+    .screen-title {
+        font-size: 1.3rem;
+        margin-bottom: 16px;
+        text-align: center;
+    }
+
+    .upload-zone {
+        padding: 20px 14px;
+        border-radius: 18px;
+        max-width: 100%;
+        gap: 12px;
+    }
+
+    .upload-image {
+        width: 100px;
+    }
+
+    .upload-zone p {
+        font-size: 0.88rem;
+    }
+
+    #preview-area {
+        max-width: 100% !important;
+    }
+
+    #image-preview {
+        max-height: 220px !important;
+        border-radius: 14px !important;
+    }
+
+    /* ✨ AI授業解説・チャット画面 */
+    .teaching-layout {
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+        height: auto;
+    }
+
+    .left-teaching-panel {
+        max-width: 100% !important;
+        width: 100% !important;
+        flex: none !important;
+    }
+
+    .left-teaching-panel > div {
+        max-height: 180px !important;
+        min-height: 120px !important;
+        border-radius: 14px !important;
+    }
+
+    .right-teaching-panel {
+        width: 100% !important;
+        flex: none !important;
+        height: auto !important;
+    }
+
+    .ai-chat-section {
+        padding: 14px 12px !important;
+        border-radius: 18px !important;
+        gap: 12px !important;
+    }
+
+    #ai-chat-log, #history-chat-log {
+        min-height: 220px !important;
+        max-height: 320px !important;
+        padding: 8px !important;
+        border-radius: 14px !important;
+    }
+
+    #chat-question-input, #history-chat-input {
+        font-size: 16px !important; /* iOSズーム防止 */
+        padding: 10px 12px !important;
+        border-radius: 12px !important;
+    }
+
+    .ai-chat-section .glass-button {
+        padding: 10px 16px !important;
+        font-size: 0.88rem !important;
+        border-radius: 12px !important;
+    }
+
+    .screen-footer-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    .screen-footer-actions button,
+    .screen-footer-actions .start-plan-btn,
+    .screen-footer-actions .back-button {
+        width: 100% !important;
+        margin: 0 !important;
+        text-align: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+    }
+
+    .settings-save-actions {
+        flex-direction: column-reverse !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    .settings-save-actions button {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    /* 📄 テスト用紙・練習問題用紙 */
+    .test-paper {
+        padding: 16px 12px;
+        border-radius: 12px;
+        margin: 0 auto;
+        max-width: 100%;
+    }
+
+    .test-paper-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        position: relative;
+    }
+
+    .test-title {
+        font-size: 1.2rem;
+        letter-spacing: 1px;
+        line-height: 1.3;
+    }
+
+    .test-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        width: 100%;
+        font-size: 0.85rem;
+    }
+
+    .test-meta .meta-field {
+        width: 100%;
+    }
+
+    .test-name-input {
+        font-size: 16px;
+        width: 140px;
+    }
+
+    .score-display {
+        position: static;
+        width: 76px;
+        height: 76px;
+        margin: 8px auto 0;
+        transform: rotate(-6deg);
+    }
+
+    .score-value {
+        font-size: 1.6rem;
+    }
+
+    .q-title {
+        font-size: 0.95rem;
+        line-height: 1.45;
+        margin-bottom: 10px;
+    }
+
+    .q-answer-area {
+        padding-left: 0;
+        width: 100%;
+        font-size: 0.95rem;
+    }
+
+    .q-input-short, .q-input-medium, .q-input-long {
+        font-size: 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        border-radius: 8px;
+        padding: 8px 10px !important;
+    }
+
+    .q-feedback {
+        padding: 10px 12px;
+        margin-top: 10px;
+    }
+
+    .grade-mark {
+        font-size: 2.2rem;
+        top: -12px;
+        right: 10px;
+    }
+
+    .q-explanation {
+        font-size: 0.82rem;
+    }
+
+    .test-actions {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .test-actions > div {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .test-actions button,
+    .test-actions .start-plan-btn,
+    .test-actions .back-button {
+        width: 100% !important;
+        margin: 0 !important;
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    /* ⚙️ 設定画面 */
+    .settings-button {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+        border-radius: 12px;
+    }
+
+    #settings-screen .glass-card {
+        padding: 20px 12px !important;
+    }
+
+    #settings-screen .back-button {
+        top: 16px !important;
+        left: 14px !important;
+        padding: 6px 14px !important;
+        font-size: 0.85rem !important;
+    }
+
+    .settings-container {
+        margin-top: 36px !important;
+        max-width: 100% !important;
+        gap: 16px !important;
+    }
+
+    .settings-section {
+        padding: 14px 12px !important;
+        border-radius: 16px !important;
+        gap: 10px !important;
+    }
+
+    .settings-section label {
+        font-size: 0.95rem !important;
+    }
+
+    .settings-section p {
+        font-size: 0.8rem !important;
+    }
+
+    #gemini-api-key, #other-preferences, #gemini-model-select {
+        font-size: 16px !important;
+    }
+
+    .premium-slider {
+        height: 10px;
+        margin: 16px 0;
+    }
+
+    .premium-slider::-webkit-slider-thumb {
+        width: 28px;
+        height: 28px;
+        margin-top: -9px;
+    }
+
+    .premium-slider::-moz-range-thumb {
+        width: 26px;
+        height: 26px;
+    }
+
+    .slider-labels {
+        font-size: 0.78rem !important;
+    }
+
+    /* 📜 履歴一覧画面 (record.html) */
+    .history-list-container:not(.horizontal-scroll) {
+        max-height: none;
+        gap: 10px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+    }
+
+    .history-item-row {
+        padding: 12px 14px;
+        border-radius: 16px;
+        gap: 12px;
+    }
+
+    .row-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1.3rem;
+        border-radius: 12px;
+    }
+
+    .row-title {
+        font-size: 0.92rem;
+    }
+
+    .row-preview {
+        font-size: 0.78rem;
+    }
+
+    /* ボタン全般のタッチフィードバック */
+    .glass-button, .start-plan-btn, .back-button, .filter-btn, .action-card {
+        touch-action: manipulation;
+    }
+
+    .glass-button:active, .start-plan-btn:active, .back-button:active, .action-card:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+}
+
+/* 📱 スマートフォン小型画面 (iPhone SE, Galaxy A等: 480px以下) */
+@media (max-width: 480px) {
+    body {
+        padding: 6px 4px 20px;
+    }
+
+    .glass-card {
+        padding: 16px 10px;
+        border-radius: 18px;
+    }
+
+    .screen-title {
+        font-size: 1.15rem;
+    }
+
+    .action-card {
+        padding: 12px 14px;
+    }
+
+    .action-text h3 {
+        font-size: 0.95rem;
+    }
+
+    .teaching-layout {
+        gap: 12px;
+    }
+
+    .chat-message.ai p,
+    .chat-message.ai > div,
+    .chat-message.user p,
+    .chat-message.user > div {
+        max-width: 90%;
+        font-size: 0.84rem;
+        padding: 8px 12px;
+    }
+
+    .test-paper {
+        padding: 12px 8px;
+    }
+
+    .test-title {
+        font-size: 1.1rem;
+    }
+}

@@ -712,10 +712,13 @@ function switchScreen(screenId) {
     screens.forEach(screen => {
         if (screen.id === `${screenId}-screen`) {
             screen.classList.add('active');
+            const card = screen.querySelector('.glass-card');
+            if (card) card.scrollTop = 0;
         } else {
             screen.classList.remove('active');
         }
     });
+    window.scrollTo(0, 0);
 }
 
 // ==========================================
@@ -786,7 +789,7 @@ function startTest() {
                 ${escapeHtml(q.title)} <span class="q-points" style="color: #7f8c8d; font-size: 0.85rem;">（${q.points}点）</span>
             </div>
             <div class="q-answer-area" style="margin-bottom: 8px;">
-                答：<input type="text" id="test-q-${idx}" placeholder="解答を入力" class="q-input-medium" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--glass-border); width: 80%; max-width: 300px;">
+                答：<input type="text" id="test-q-${idx}" placeholder="解答を入力" class="q-input-medium" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--glass-border); width: 100%; max-width: 320px; font-size: 16px; box-sizing: border-box;">
             </div>
             <div class="q-feedback hidden" id="test-fb-${idx}" style="padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.6); margin-top: 6px;">
                 <span class="grade-mark" style="font-weight: bold; font-size: 1.2rem; margin-right: 8px;"></span>
@@ -1773,13 +1776,13 @@ function renderPracticeQuestions(questions) {
         `;
 
         if (q.type === 'choice' && Array.isArray(q.options)) {
-            html += `<div class="q-answer-area" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; margin-left: 15px;">`;
+            html += `<div class="q-answer-area" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; width: 100%;">`;
             q.options.forEach((opt, optIdx) => {
                 const radioId = `pq_${qNum}_opt_${optIdx}`;
                 html += `
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem; background: rgba(245,247,250,0.8); padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; transition: all 0.2s;">
-                        <input type="radio" name="pq_ans_${qNum}" id="${radioId}" value="${escapeHtml(opt)}" style="transform: scale(1.1); cursor: pointer;">
-                        <span>${escapeHtml(opt)}</span>
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95rem; background: rgba(245,247,250,0.85); padding: 10px 14px; border-radius: 10px; border: 1px solid #e2e8f0; transition: all 0.2s; width: 100%; box-sizing: border-box;">
+                        <input type="radio" name="pq_ans_${qNum}" id="${radioId}" value="${escapeHtml(opt)}" style="transform: scale(1.15); cursor: pointer; flex-shrink: 0;">
+                        <span style="flex: 1; word-break: break-word;">${escapeHtml(opt)}</span>
                     </label>
                 `;
             });
@@ -1787,8 +1790,8 @@ function renderPracticeQuestions(questions) {
         } else {
             // テキスト入力形式
             html += `
-                <div class="q-answer-area" style="margin-top: 10px; margin-left: 15px;">
-                    答：<input type="text" id="pq_ans_text_${qNum}" placeholder="解答を入力してください" class="q-input-long" style="width: 80%; padding: 8px 12px; font-size: 0.95rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+                <div class="q-answer-area" style="margin-top: 10px; width: 100%;">
+                    答：<input type="text" id="pq_ans_text_${qNum}" placeholder="解答を入力してください" class="q-input-long" style="width: 100%; max-width: 400px; padding: 8px 12px; font-size: 16px; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;">
                 </div>
             `;
         }
