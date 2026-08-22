@@ -64,6 +64,127 @@ function saveHistory() {
     }
 }
 
+let isHomeSelectionMode = false;
+let selectedHomeHistoryIds = new Set();
+
+/**
+ * 選択削除モードのON/OFF切り替え
+ */
+function toggleHomeSelectionMode(forceState) {
+    if (typeof forceState === 'boolean') {
+        isHomeSelectionMode = forceState;
+    } else {
+        isHomeSelectionMode = !isHomeSelectionMode;
+    }
+
+    if (!isHomeSelectionMode) {
+        selectedHomeHistoryIds.clear();
+    }
+
+    const toggleBtn = document.getElementById('home-select-toggle-btn');
+    const toolbar = document.getElementById('home-selection-toolbar');
+
+    if (toggleBtn) {
+        if (isHomeSelectionMode) {
+            toggleBtn.classList.add('active');
+            toggleBtn.textContent = '✕ 選択を解除';
+        } else {
+            toggleBtn.classList.remove('active');
+            toggleBtn.textContent = '☑️ 選択して削除';
+        }
+    }
+
+    if (toolbar) {
+        if (isHomeSelectionMode) {
+            toolbar.classList.remove('hidden');
+        } else {
+            toolbar.classList.add('hidden');
+        }
+    }
+
+    updateHomeSelectionToolbar();
+    renderHistory();
+}
+
+/**
+ * 1件の選択状態をトグル
+ */
+function toggleSelectHomeHistoryItem(id) {
+    if (selectedHomeHistoryIds.has(id)) {
+        selectedHomeHistoryIds.delete(id);
+    } else {
+        selectedHomeHistoryIds.add(id);
+    }
+    updateHomeSelectionToolbar();
+    renderHistory();
+}
+
+/**
+ * 全選択 / 全解除のトグル
+ */
+function toggleSelectAllHomeHistory() {
+    const visibleData = getFilteredHistoryData();
+    const visibleIds = visibleData.map(item => item.id);
+
+    // すべて選択されている場合は全解除、そうでなければ全選択
+    const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedHomeHistoryIds.has(id));
+
+    if (allSelected) {
+        selectedHomeHistoryIds.clear();
+    } else {
+        visibleIds.forEach(id => selectedHomeHistoryIds.add(id));
+    }
+
+    updateHomeSelectionToolbar();
+    renderHistory();
+}
+
+/**
+ * 選択ツールバーの表示更新
+ */
+function updateHomeSelectionToolbar() {
+    const countBadge = document.getElementById('home-selection-count');
+    const batchDeleteBtn = document.getElementById('home-batch-delete-btn');
+    const count = selectedHomeHistoryIds.size;
+
+    if (countBadge) {
+        countBadge.textContent = `${count}件選択中`;
+    }
+
+    if (batchDeleteBtn) {
+        batchDeleteBtn.disabled = (count === 0);
+        batchDeleteBtn.textContent = count > 0 ? `🗑️ 選択した${count}件を削除` : '🗑️ 選択した記録を削除';
+    }
+}
+
+/**
+ * 選択した記録を一括削除（パッと消す）
+ */
+function deleteSelectedHomeHistory() {
+    const count = selectedHomeHistoryIds.size;
+    if (count === 0) return;
+
+    if (confirm(`選択した ${count} 件の学習記録をまとめて削除しますか？\n（削除した記録は元に戻せません）`)) {
+        dummyHistory = dummyHistory.filter(item => !selectedHomeHistoryIds.has(item.id));
+        selectedHomeHistoryIds.clear();
+        saveHistory();
+        updateHomeSelectionToolbar();
+        renderHistory();
+        showToastNotification(`🗑️ 選択した ${count} 件の学習記録を削除しました`);
+    }
+}
+
+function getFilteredHistoryData() {
+    return dummyHistory.filter(item => {
+        const matchSubject = (currentFilter === 'すべて' || item.subject === currentFilter);
+        const titleText = (item.title || '').toLowerCase();
+        const searchText = searchQuery.toLowerCase().trim();
+        const matchKeyword = titleText.indexOf(searchText) !== -1;
+        
+        return matchSubject && matchKeyword;
+    });
+}
+
 /**
  * 記録を1件ずつ削除する関数
  */
@@ -73,7 +194,9 @@ function deleteSingleHistoryItem(id) {
     
     if (confirm(`学習記録「${itemTitle}」を削除しますか？\n（削除した記録は元に戻せません）`)) {
         dummyHistory = dummyHistory.filter(h => h.id !== id);
+        selectedHomeHistoryIds.delete(id);
         saveHistory();
+        updateHomeSelectionToolbar();
         renderHistory();
         
         // 詳細画面を開いていた場合はホームへ戻る
@@ -180,14 +303,7 @@ function renderHistory() {
     
     historyList.innerHTML = '';
     
-    const filteredData = dummyHistory.filter(item => {
-        const matchSubject = (currentFilter === 'すべて' || item.subject === currentFilter);
-        const titleText = (item.title || '').toLowerCase();
-        const searchText = searchQuery.toLowerCase().trim();
-        const matchKeyword = titleText.indexOf(searchText) !== -1;
-        
-        return matchSubject && matchKeyword;
-    });
+    const filteredData = getFilteredHistoryData();
     
     if (filteredData.length === 0) {
         if (emptyMessage) emptyMessage.classList.remove('hidden');
@@ -196,17 +312,32 @@ function renderHistory() {
         
         filteredData.forEach(item => {
             const card = document.createElement('div');
-            card.className = 'history-card-horizontal';
-            card.style.cursor = 'pointer';
-            card.setAttribute('onclick', `openHistoryChat('${item.id}')`);
-            card.innerHTML = `
-                <button class="delete-item-btn" onclick="event.stopPropagation(); deleteSingleHistoryItem('${item.id}')" title="この記録を削除">✕</button>
-                <div class="card-icon">${item.icon || '📚'}</div>
-                <div class="card-info">
-                    <span class="history-date">📅 ${escapeHtml(item.date || '')}</span>
-                    <h4 class="history-title">${escapeHtml(item.title || '')}</h4>
-                </div>
-            `;
+            const isSelected = selectedHomeHistoryIds.has(item.id);
+            
+            card.className = `history-card-horizontal ${isHomeSelectionMode ? 'in-selection-mode' : ''} ${isSelected ? 'selected-for-delete' : ''}`;
+            
+            if (isHomeSelectionMode) {
+                card.setAttribute('onclick', `toggleSelectHomeHistoryItem('${item.id}')`);
+                card.innerHTML = `
+                    <div class="card-select-checkbox">${isSelected ? '✓' : ''}</div>
+                    <div class="card-icon">${item.icon || '📚'}</div>
+                    <div class="card-info">
+                        <span class="history-date">📅 ${escapeHtml(item.date || '')}</span>
+                        <h4 class="history-title">${escapeHtml(item.title || '')}</h4>
+                    </div>
+                `;
+            } else {
+                card.setAttribute('onclick', `openHistoryChat('${item.id}')`);
+                card.innerHTML = `
+                    <button class="delete-item-btn" onclick="event.stopPropagation(); deleteSingleHistoryItem('${item.id}')" title="この記録を削除">✕</button>
+                    <div class="card-icon">${item.icon || '📚'}</div>
+                    <div class="card-info">
+                        <span class="history-date">📅 ${escapeHtml(item.date || '')}</span>
+                        <h4 class="history-title">${escapeHtml(item.title || '')}</h4>
+                    </div>
+                `;
+            }
+            
             historyList.appendChild(card);
         });
     }

@@ -52,9 +52,24 @@
                     </div>
 
                     <div class="right-panel">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%; flex-wrap: wrap; gap: 8px;">
                             <h3 class="panel-subtitle" style="margin-bottom: 0;">📜 学習記録</h3>
-                            <a href="record/record.html" style="font-size: 0.88rem; color: var(--accent-blue); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-purple)'" onmouseout="this.style.color='var(--accent-blue)'">すべて表示 ➔</a>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="select-mode-toggle-btn" id="home-select-toggle-btn" onclick="toggleHomeSelectionMode()">☑️ 選択して削除</button>
+                                <a href="record/record.html" style="font-size: 0.88rem; color: var(--accent-blue); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-purple)'" onmouseout="this.style.color='var(--accent-blue)'">すべて表示 ➔</a>
+                            </div>
+                        </div>
+
+                        <!-- 選択削除用ツールバー（選択モード時のみ表示） -->
+                        <div id="home-selection-toolbar" class="selection-toolbar hidden">
+                            <div class="selection-toolbar-left">
+                                <button class="toolbar-btn secondary" onclick="toggleSelectAllHomeHistory()">🔘 全選択 / 全解除</button>
+                                <span class="selection-count-badge" id="home-selection-count">0件選択中</span>
+                            </div>
+                            <div class="selection-toolbar-right">
+                                <button class="toolbar-btn danger" id="home-batch-delete-btn" onclick="deleteSelectedHomeHistory()" disabled>🗑️ 選択した記録を削除</button>
+                                <button class="toolbar-btn close" onclick="toggleHomeSelectionMode(false)">✕ 完了</button>
+                            </div>
                         </div>
                         
                         <div class="search-box-container">

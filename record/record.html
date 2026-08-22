@@ -34,17 +34,26 @@
     <main class="container">
 
         <section id="history-screen" class="screen active">
-
             <div class="glass-card visible">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <h2 class="screen-title" style="margin-bottom: 0;">これまでの学習記録</h2>
+                    <button class="select-mode-toggle-btn" id="record-select-toggle-btn" onclick="toggleRecordSelectionMode()">☑️ 選択して削除</button>
+                </div>
 
-                <h2 class="screen-title">これまでの学習記録</h2>
-
-               
+                <!-- 選択削除用ツールバー（選択モード時のみ表示） -->
+                <div id="record-selection-toolbar" class="selection-toolbar hidden">
+                    <div class="selection-toolbar-left">
+                        <button class="toolbar-btn secondary" onclick="toggleSelectAllRecordHistory()">🔘 全選択 / 全解除</button>
+                        <span class="selection-count-badge" id="record-selection-count">0件選択中</span>
+                    </div>
+                    <div class="selection-toolbar-right">
+                        <button class="toolbar-btn danger" id="record-batch-delete-btn" onclick="deleteSelectedRecordHistory()" disabled>🗑️ 選択した記録を削除</button>
+                        <button class="toolbar-btn close" onclick="toggleRecordSelectionMode(false)">✕ 完了</button>
+                    </div>
+                </div>
 
                 <div id="empty-history-message" class="empty-message">
-
                     <p>まだ記録がありません。復習を始めてみよう！</p>
-
                 </div>
 
 
