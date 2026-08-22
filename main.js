@@ -18,37 +18,10 @@ function isSampleItem(item) {
     if (sampleIds.includes(String(item.id)) || String(item.id).startsWith('h_sample') || String(item.id).startsWith('sample_')) {
         return true;
     }
-    if (!String(item.id).startsWith('h_session_')) {
-        const sampleTitles = [
-            '漢文の訓読',
-            '二次関数のグラフ',
-            '植物の呼吸',
-            '世界の気候区分',
-            '不規則動詞の過去形',
-            '数学：二次関数の最大・最小',
-            '数学：二次関数の基礎計算',
-            '二次関数'
-        ];
-        if (item.title && sampleTitles.some(st => item.title.includes(st))) {
-            return true;
-        }
-    }
     return false;
 }
 
 function loadHistory() {
-    const versionKey = 'ai-study-history-v3';
-    const isUpgraded = localStorage.getItem(versionKey);
-
-    if (!isUpgraded) {
-        // バージョン更新に伴い過去の全データを完全に削除し、まっさらな状態からスタート
-        localStorage.removeItem('ai-study-history');
-        localStorage.setItem(versionKey, 'true');
-        dummyHistory = [];
-        saveHistory();
-        return;
-    }
-
     const saved = localStorage.getItem('ai-study-history');
     if (saved) {
         try {
@@ -65,29 +38,73 @@ function loadHistory() {
     } else {
         dummyHistory = [];
     }
-    saveHistory();
 }
 
 function saveHistory() {
     try {
         localStorage.setItem('ai-study-history', JSON.stringify(dummyHistory));
     } catch (e) {
-        console.error('Failed to save history to localStorage:', e);
-        if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('LocalStorage save initial attempt failed, preserving text logs:', e);
+        try {
             // ストレージ容量オーバー時は、古い履歴の画像データを削ってテキストログを確実に保持する
+            const textOnlyHistory = dummyHistory.map(item => ({ ...item, image: null }));
+            localStorage.setItem('ai-study-history', JSON.stringify(textOnlyHistory));
+            dummyHistory = textOnlyHistory;
+        } catch (err2) {
+            console.error('Secondary text-only save attempt failed:', err2);
             try {
-                const compactHistory = dummyHistory.map((item, idx) => {
-                    if (idx > 0 && item.image) {
-                        return { ...item, image: null };
-                    }
-                    return item;
-                });
-                localStorage.setItem('ai-study-history', JSON.stringify(compactHistory));
-            } catch (err2) {
-                console.error('Secondary save attempt failed:', err2);
+                // 最新30件に絞って保存
+                const compact = dummyHistory.slice(0, 30).map(item => ({ ...item, image: null }));
+                localStorage.setItem('ai-study-history', JSON.stringify(compact));
+                dummyHistory = compact;
+            } catch (err3) {
+                console.error('Critical localStorage save failure:', err3);
             }
         }
     }
+}
+
+/**
+ * 記録を1件ずつ削除する関数
+ */
+function deleteSingleHistoryItem(id) {
+    const item = dummyHistory.find(h => h.id === id);
+    const itemTitle = item ? item.title : 'この学習記録';
+    
+    if (confirm(`学習記録「${itemTitle}」を削除しますか？\n（削除した記録は元に戻せません）`)) {
+        dummyHistory = dummyHistory.filter(h => h.id !== id);
+        saveHistory();
+        renderHistory();
+        
+        // 詳細画面を開いていた場合はホームへ戻る
+        const historyScreen = document.getElementById('history-chat-screen');
+        if (historyScreen && historyScreen.classList.contains('active')) {
+            switchScreen('home');
+        }
+        
+        showToastNotification(`🗑️ 学習記録「${itemTitle}」を削除しました`);
+    }
+}
+
+function deleteCurrentActiveHistoryItem() {
+    if (activeHistoryItem && activeHistoryItem.id) {
+        deleteSingleHistoryItem(activeHistoryItem.id);
+    }
+}
+
+function showToastNotification(msg) {
+    let toast = document.getElementById('toast-notification');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-notification';
+        toast.className = 'toast-notification';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2800);
 }
 
 let currentFilter = 'すべて';
@@ -165,7 +182,7 @@ function renderHistory() {
     
     const filteredData = dummyHistory.filter(item => {
         const matchSubject = (currentFilter === 'すべて' || item.subject === currentFilter);
-        const titleText = item.title.toLowerCase();
+        const titleText = (item.title || '').toLowerCase();
         const searchText = searchQuery.toLowerCase().trim();
         const matchKeyword = titleText.indexOf(searchText) !== -1;
         
@@ -173,9 +190,9 @@ function renderHistory() {
     });
     
     if (filteredData.length === 0) {
-        emptyMessage.classList.remove('hidden');
+        if (emptyMessage) emptyMessage.classList.remove('hidden');
     } else {
-        emptyMessage.classList.add('hidden');
+        if (emptyMessage) emptyMessage.classList.add('hidden');
         
         filteredData.forEach(item => {
             const card = document.createElement('div');
@@ -183,15 +200,21 @@ function renderHistory() {
             card.style.cursor = 'pointer';
             card.setAttribute('onclick', `openHistoryChat('${item.id}')`);
             card.innerHTML = `
-                <div class="card-icon">${item.icon}</div>
+                <button class="delete-item-btn" onclick="event.stopPropagation(); deleteSingleHistoryItem('${item.id}')" title="この記録を削除">✕</button>
+                <div class="card-icon">${item.icon || '📚'}</div>
                 <div class="card-info">
-                    <span class="history-date">📅 ${item.date}</span>
-                    <h4 class="history-title">${item.title}</h4>
+                    <span class="history-date">📅 ${escapeHtml(item.date || '')}</span>
+                    <h4 class="history-title">${escapeHtml(item.title || '')}</h4>
                 </div>
             `;
             historyList.appendChild(card);
         });
     }
+
+    // AI復習プランも最新の履歴に合わせて更新
+    const currentActiveTab = document.querySelector('.time-tab.active');
+    const minutes = currentActiveTab ? parseInt(currentActiveTab.textContent, 10) || 5 : 5;
+    switchPlanTime(minutes);
 }
 
 // ==========================================
@@ -850,8 +873,9 @@ function saveWakaruSessionAndReturnHome() {
     if (chatLogEl) {
         const messages = chatLogEl.querySelectorAll('.chat-message');
         messages.forEach(msg => {
+            if (msg.classList.contains('loading-indicator')) return;
             const sender = msg.classList.contains('ai') ? 'ai' : 'user';
-            const contentEl = msg.querySelector('div, p');
+            const contentEl = msg.querySelector('.markdown-body, div, p');
             const text = contentEl ? contentEl.innerHTML : (msg.innerText || '');
             if (text && text.trim()) {
                 chatHistory.push({ sender, text });
@@ -889,7 +913,7 @@ function saveWakaruSessionAndReturnHome() {
 
     let title = baseTitle;
     if (hasPractice) {
-        title = `${baseTitle} ＆ 練習問題 (得点: ${practiceScoreStr}点)`;
+        title = `${baseTitle} ＆ 練習問題 (${practiceScoreStr}点)`;
     } else if (chatHistory.length > 2) {
         title = `${baseTitle}（質疑応答つき）`;
     }
@@ -909,29 +933,40 @@ function saveWakaruSessionAndReturnHome() {
         icon = '📖';
     }
 
-    // 5. 1つの学習記録オブジェクトとして保存
-    dummyHistory.unshift({
-        id: 'h_session_' + Date.now(),
-        date: dateString,
-        subject: subject,
-        title: title,
-        icon: icon,
-        image: imageSrc,
-        chat: chatHistory
-    });
+    // 5. サムネイル圧縮してから保存
+    const commitSave = (thumbSrc) => {
+        dummyHistory.unshift({
+            id: 'h_session_' + Date.now(),
+            date: dateString,
+            subject: subject,
+            title: title,
+            icon: icon,
+            image: thumbSrc,
+            chat: chatHistory
+        });
 
-    saveHistory();
+        saveHistory();
 
-    // 練習問題状態とフォームをクリア
-    currentPracticeQuestions = [];
-    if (typeof lastWakaruAdvice !== 'undefined') lastWakaruAdvice = '';
-    if (scoreDisp) scoreDisp.classList.add('hidden');
-    const adviceBox = document.getElementById('wakaru-advice-box');
-    if (adviceBox) adviceBox.classList.add('hidden');
+        // 練習問題状態とフォームをクリア
+        currentPracticeQuestions = [];
+        if (typeof lastWakaruAdvice !== 'undefined') lastWakaruAdvice = '';
+        if (scoreDisp) scoreDisp.classList.add('hidden');
+        const adviceBox = document.getElementById('wakaru-advice-box');
+        if (adviceBox) adviceBox.classList.add('hidden');
 
-    renderHistory();
-    clearFileSelect();
-    switchScreen('home');
+        renderHistory();
+        clearFileSelect();
+        switchScreen('home');
+        showToastNotification(`✅ 学習記録「${title}」を保存しました！`);
+    };
+
+    if (imageSrc) {
+        compressImage(imageSrc, 400, 400, 0.6, (compressedThumb) => {
+            commitSave(compressedThumb);
+        });
+    } else {
+        commitSave(null);
+    }
 }
 
 function finishReviewAndSave() {
@@ -1124,11 +1159,13 @@ function finishTestSessionAndSave() {
         });
     });
 
+    const testTitle = `実力診断テスト (得点: ${score}点)`;
+
     dummyHistory.unshift({
         id: 'h_session_' + Date.now(),
         date: dateString,
         subject: '実力テスト',
-        title: `実力診断テスト (得点: ${score}点)`,
+        title: testTitle,
         icon: '📝',
         image: null,
         chat: chatHistory
@@ -1137,6 +1174,7 @@ function finishTestSessionAndSave() {
     saveHistory();
     renderHistory();
     switchScreen('home');
+    showToastNotification(`✅ 学習記録「${testTitle}」を保存しました！`);
 }
 
 function finishTest() {

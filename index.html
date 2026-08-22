@@ -338,7 +338,10 @@
             <div class="glass-card teaching-card-container">
                 <div class="teaching-header">
                     <h2 class="screen-title" id="history-chat-title" style="margin-bottom: 0; font-size: 1.35rem;">✨ 過去の解説授業（履歴）</h2>
-                    <button class="back-button header-action-btn" onclick="switchScreen('home')">🏠 ホームへ戻る</button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="back-button header-action-btn" onclick="deleteCurrentActiveHistoryItem()" title="この記録を削除" style="color: #e74c3c; border-color: rgba(231, 76, 60, 0.35); background: rgba(254, 242, 242, 0.9);">🗑️ この記録を削除</button>
+                        <button class="back-button header-action-btn" onclick="switchScreen('home')">🏠 ホームへ戻る</button>
+                    </div>
                 </div>
                 
                 <div class="teaching-layout">
