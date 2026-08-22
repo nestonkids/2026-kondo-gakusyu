@@ -427,8 +427,8 @@ ${aiProfilePrompt}
 
             parts.push({ text: systemPrompt });
             parts.push({
-                inlineData: {
-                    mimeType: mimeType,
+                inline_data: {
+                    mime_type: mimeType,
                     data: base64Data
                 }
             });
@@ -592,8 +592,8 @@ ${aiProfilePrompt}
             const mimeType = teachingPreview.src.split(';')[0].split(':')[1] || 'image/jpeg';
             if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
                 contents[contents.length - 1].parts.push({
-                    inlineData: {
-                        mimeType: mimeType,
+                    inline_data: {
+                        mime_type: mimeType,
                         data: base64Data
                     }
                 });
@@ -1317,6 +1317,37 @@ function loadSettings() {
 // ==========================================
 // 🌐 Gemini API 連携ユーティリティ
 // ==========================================
+
+/**
+ * APIキーを使って利用可能なGeminiモデル一覧を取得する
+ */
+async function fetchAvailableGeminiModels(apiKey) {
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            const msg = errData.error?.message || `HTTP ${response.status}`;
+            throw new Error(`APIキー認証エラー (${response.status}): ${msg}`);
+        }
+        const data = await response.json();
+        if (Array.isArray(data.models)) {
+            // generateContent に対応しているモデル名を抽出（models/gemini-... から gemini-... を取得）
+            const usable = data.models
+                .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                .map(m => m.name.replace(/^models\//, ''));
+            return usable;
+        }
+        return [];
+    } catch (e) {
+        console.warn('Failed to fetch dynamic models list:', e);
+        return [];
+    }
+}
+
+/**
+ * Gemini API を安全に呼び出す（動的モデル探索＆自動フォールバック付き）
+ */
 async function callGeminiAPI(contents, preferredModel = null) {
     const rawApiKey = localStorage.getItem('gemini-api-key') || '';
     const apiKey = rawApiKey.trim();
@@ -1324,15 +1355,33 @@ async function callGeminiAPI(contents, preferredModel = null) {
         throw new Error('Gemini APIキーが設定されていません。右上の「⚙️」設定画面でAPIキーを入力して保存してください。');
     }
 
-    const selectedModel = preferredModel || localStorage.getItem('gemini-model') || 'gemini-2.0-flash';
-    
-    // 試行するモデル候補リスト（指定モデル ➔ 2.0-flash ➔ 1.5-flash ➔ 1.5-pro）
-    const candidateModels = [
-        selectedModel,
+    // ユーザー指定モデル
+    const userSelected = preferredModel || localStorage.getItem('gemini-model') || 'gemini-2.0-flash';
+    const cleanUserSelected = userSelected.replace(/^models\//, '');
+
+    // 優先的に試行するモデル候補リスト
+    let candidateModels = [
+        cleanUserSelected,
         'gemini-2.0-flash',
         'gemini-1.5-flash',
-        'gemini-1.5-pro'
-    ].filter((m, idx, self) => self.indexOf(m) === idx);
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-pro',
+        'gemini-2.0-flash-exp',
+        'gemini-2.5-flash'
+    ];
+
+    // 動的にアカウントで使えるモデル一覧を取得できれば優先リストの先頭にマージ
+    const dynamicModels = await fetchAvailableGeminiModels(apiKey);
+    if (dynamicModels.length > 0) {
+        candidateModels = [
+            cleanUserSelected,
+            ...dynamicModels,
+            ...candidateModels
+        ];
+    }
+
+    // 重複除去
+    candidateModels = candidateModels.filter((m, idx, self) => Boolean(m) && self.indexOf(m) === idx);
 
     let lastError = null;
 
@@ -1365,27 +1414,27 @@ async function callGeminiAPI(contents, preferredModel = null) {
 
             // 404 (モデル不在) の場合は次の候補モデルへリトライ
             if (statusCode === 404) {
-                console.warn(`Model ${model} not found, trying fallback candidate...`);
-                lastError = new Error(`モデル ${model} が見つかりませんでした。別のモデルで再試行します。`);
+                console.warn(`Model ${model} not found (404), trying next candidate...`);
+                lastError = new Error(`モデル ${model} が見つかりませんでした (404)。`);
                 continue;
             }
 
-            // 400 (API KEY INVALID) や 403 (PERMISSION DENIED) の場合は親切なメッセージを返す
+            // 400 (API KEY INVALID) や 403 (PERMISSION DENIED) の場合は即座にわかりやすいエラーを投げる
             if (statusCode === 400 && (rawMsg.includes('API_KEY_INVALID') || rawMsg.includes('API key not valid'))) {
-                throw new Error('APIキーが無効です。Google AI Studioで取得した正しいキーが入力されているかご確認ください。');
+                throw new Error('APIキーが無効です。Google AI Studio (https://aistudio.google.com/) で取得した正しいAPIキーを入力してください。');
             }
             if (statusCode === 403) {
-                throw new Error('APIのアクセス権限が拒否されました。APIキーの有効性や課金・利用規約の状態をご確認ください。');
+                throw new Error('APIのアクセス権限が拒否されました (403)。APIキーの利用規約同意状況や制限をご確認ください。');
             }
             if (statusCode === 429) {
-                throw new Error('Gemini APIの利用制限（レートリミット）に達しました。しばらく待ってから再度お試しください。');
+                throw new Error('Gemini APIの利用制限（レートリミット: 429）に達しました。1〜2分待ってから再度お試しください。');
             }
 
             throw new Error(`Gemini APIエラー (${statusCode}): ${rawMsg}`);
         } catch (e) {
             lastError = e;
+            // 認証エラーやレートリミットは即座に中断
             if (e.message.includes('APIキーが無効') || e.message.includes('アクセス権限が拒否') || e.message.includes('利用制限')) {
-                // キーや認証そのもののエラーは即座にスロー
                 throw e;
             }
         }
@@ -1395,7 +1444,7 @@ async function callGeminiAPI(contents, preferredModel = null) {
 }
 
 /**
- * 設定画面からAPIキーの接続テストを行う関数
+ * 設定画面からAPIキーの接続テストを行う関数（詳細診断つき）
  */
 async function testGeminiAPIConnection() {
     const apiKeyInput = document.getElementById('gemini-api-key');
@@ -1407,24 +1456,27 @@ async function testGeminiAPIConnection() {
     const rawKey = apiKeyInput ? apiKeyInput.value.trim() : (localStorage.getItem('gemini-api-key') || '').trim();
 
     if (!rawKey) {
-        resultEl.innerHTML = '<span style="color: #e74c3c; font-weight: bold;">⚠️ APIキーを入力してください。</span>';
+        resultEl.innerHTML = '<div style="background: rgba(231,76,60,0.12); border: 1px solid #e74c3c; border-radius: 10px; padding: 10px 14px; color: #c0392b; font-weight: 600; font-size: 0.88rem;">⚠️ APIキーを入力してください。</div>';
         resultEl.style.display = 'block';
         return;
     }
 
     if (testBtn) {
         testBtn.disabled = true;
-        testBtn.textContent = '🔄 接続テスト中...';
+        testBtn.textContent = '🔄 診断・テスト中...';
     }
 
-    resultEl.innerHTML = '<span style="color: #546e7a;">🌐 Google Gemini サーバーに接続しています...</span>';
+    resultEl.innerHTML = '<div style="color: #546e7a; font-size: 0.88rem;">🌐 Google Gemini サーバーと通信診断中...</div>';
     resultEl.style.display = 'block';
 
     try {
+        // ステップ1: キーの有効性と利用可能モデルの確認
+        const models = await fetchAvailableGeminiModels(rawKey);
+        
+        // ステップ2: 実際のテキスト対話テスト
         const modelSelect = document.getElementById('gemini-model-select');
         const selectedModel = modelSelect ? modelSelect.value : 'gemini-2.0-flash';
 
-        // テスト用の軽量プロンプト
         const testContents = [
             {
                 role: 'user',
@@ -1432,24 +1484,33 @@ async function testGeminiAPIConnection() {
             }
         ];
 
-        // 一時的にキーをセットしてテスト
         localStorage.setItem('gemini-api-key', rawKey);
         const reply = await callGeminiAPI(testContents, selectedModel);
+        const activeModel = localStorage.getItem('gemini-model') || selectedModel;
 
-        const currentModel = localStorage.getItem('gemini-model') || selectedModel;
+        const modelListHtml = models.length > 0 
+            ? `<div style="margin-top: 6px; font-size: 0.78rem; color: #546e7a;">利用可能モデル: ${models.slice(0, 5).join(', ')}${models.length > 5 ? ' など計' + models.length + '種' : ''}</div>`
+            : '';
+
         resultEl.innerHTML = `
-            <div style="background: rgba(46, 204, 113, 0.15); border: 1px solid #2ecc71; border-radius: 10px; padding: 10px 14px; color: #27ae60; font-weight: 600; font-size: 0.9rem; line-height: 1.4;">
+            <div style="background: rgba(46, 204, 113, 0.15); border: 1px solid #2ecc71; border-radius: 12px; padding: 12px 14px; color: #27ae60; font-weight: 600; font-size: 0.9rem; line-height: 1.45;">
                 ✅ <strong>接続テスト成功！</strong><br>
-                Gemini API（モデル: ${currentModel}）との通信に成功しました。<br>
-                <span style="font-size: 0.8rem; color: #546e7a;">AIの応答: 「${escapeHtml(reply.trim())}」</span>
+                Gemini API（稼働モデル: <code>${activeModel}</code>）と正常に通信できました。<br>
+                <span style="font-size: 0.82rem; color: #34495e;">AIからの応答: 「${escapeHtml(reply.trim())}」</span>
+                ${modelListHtml}
             </div>
         `;
     } catch (err) {
-        console.error('API Test Error:', err);
+        console.error('API Connection Test Failed:', err);
         resultEl.innerHTML = `
-            <div style="background: rgba(231, 76, 60, 0.15); border: 1px solid #e74c3c; border-radius: 10px; padding: 10px 14px; color: #c0392b; font-weight: 600; font-size: 0.9rem; line-height: 1.4;">
+            <div style="background: rgba(231, 76, 60, 0.15); border: 1px solid #e74c3c; border-radius: 12px; padding: 12px 14px; color: #c0392b; font-weight: 600; font-size: 0.9rem; line-height: 1.45;">
                 ❌ <strong>接続テスト失敗</strong><br>
-                ${escapeHtml(err.message)}
+                <div style="font-size: 0.85rem; margin-top: 4px; font-weight: normal; color: #7f1d1d;">${escapeHtml(err.message)}</div>
+                <div style="margin-top: 8px; font-size: 0.8rem; color: #546e7a; font-weight: normal;">
+                    💡 <strong>確認ポイント:</strong><br>
+                    ・Google AI Studio (<a href="https://aistudio.google.com/" target="_blank" style="color: #2980b9;">aistudio.google.com</a>) で「Create API key」から取得したキーか確認してください。<br>
+                    ・キーの先頭や末尾に不要な文字や余白が含まれていないか「👁️」ボタンで確認してください。
+                </div>
             </div>
         `;
     } finally {
