@@ -488,7 +488,12 @@ function clearFileSelect() {
 // ==========================================
 // 🚀 復習を開始する関数
 // ==========================================
+let currentSessionTopic = { title: '', subject: '数学' };
+
 function startReviewProcess() {
+    // セッショントピックのリセット
+    currentSessionTopic = { title: '', subject: '数学' };
+
     // ローディング画面に切り替え
     switchScreen('loading');
     
@@ -531,20 +536,25 @@ function startReviewProcess() {
             const cleanBase64 = base64Data.replace(/[\r\n\s]/g, '');
 
             systemPrompt = `あなたは親身で教え上手な学習アシスタント「わかるくん」です。
-ユーザーがアップロードした勉強用ノート（またはプリント・教科書などの画像）を読み取り、生徒がスラスラ理解できるように丁寧に解説授業を行ってください。
+生徒がアップロードしたノート（プリント・教科書・テスト用紙などの画像）を読み取り、生徒が深く理解できるように丁寧に解説授業を行ってください。
+
+【学習記録用タグ（必須・1行目に出力）】
+必ず回答の最前頭（1行目）に、解析したノートの具体的な「単元タイトル（20文字以内）」と「教科（国語/数学/理科/社会/英語）」を以下の形式で出力してください：
+<!--TOPIC: 単元タイトル | SUBJECT: 教科名-->
+（例: <!--TOPIC: 一次関数の利用（追いつき算） | SUBJECT: 数学-->、<!--TOPIC: 植物の呼吸と光合成 | SUBJECT: 理科--> など）
 
 ${aiProfilePrompt}
 
 【指導・解説の必須ルール】
-1. 📸 【写真の内容を網羅して分かりやすく教える】：
-   - 写真に写っている文字、問題、板書、公式、図表、要点をしっかり読み取り、内容をほぼ漏れなくステップ順に解説してください。
-   - 「ノートの重要ポイント」「公式・定理の成り立ちと使い方」「解法のステップ」を具体的に教え、理解を深めてください。
+1. 📸 【写真の内容を具体的に読み取って教える】：
+   - 写真に書かれている具体的な数字、問題文、グラフ、公式、用語をしっかり読み取り、ステップ順に解説してください。
+   - 紋切型の決まり文句や定型的な挨拶を繰り返さず、その問題・単元の核心に直球で入って解説してください。
 
 2. 📐 【数式のLaTeX表記を徹底】：
    - 数学の式や記号（直線 $l, m$、三角形 $\\triangle ABC$、座標 $(x, y)$、$y = ax + b$、分数など）は必ず \`$数式$\` または \`$$数式$$\` で記述してください。
 
 3. ❓ 【最後に必ず質問・問いかけを行う】：
-   - 解説の最後には、理解度を確かめる「確認の問いかけ・ミニ質問」を1つ投げかけるか、または「ここまでで分からない所や、もっと詳しく聞きたい質問はある？何でも聞いてね！」と優しく質問の有無を尋ねてください。
+   - 解説の最後には、理解度を確かめる「確認の問いかけ・ミニ質問」を1つ投げかけるか、または「ここまでで分からない所や質問はある？」と優しく尋ねてください。
 
 4. 📖 【見やすさと美しさの徹底】：
    - 見出し（## や ###）、箇条書き（- ）、重要なポイントの太字（**...**）を使って、スマホでも一目で読みやすいレイアウトにしてください。`;
@@ -561,6 +571,9 @@ ${aiProfilePrompt}
             // 画像なしでテキスト解説を求める場合
             systemPrompt = `あなたは親身で教え上手な学習アシスタント「わかるくん」です。
 生徒に向けて、今日の復習・学習ガイダンスを温かく行ってください。
+
+【学習記録用タグ（必須・1行目に出力）】
+<!--TOPIC: 今日の学習ガイダンス | SUBJECT: 総合-->
 
 ${aiProfilePrompt}
 
@@ -581,11 +594,14 @@ ${aiProfilePrompt}
 
         // API呼び出し実行
         callGeminiAPI(contents).then((aiText) => {
+            const { cleanText, title, subject } = parseTopicAndSubject(aiText);
+            currentSessionTopic = { title, subject };
+
             if (chatLog) {
                 chatLog.innerHTML = `
-                    <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
-                        <span style="font-size: 1.2rem;">🤖</span>
-                        <div>${convertMarkdownToHtml(aiText)}</div>
+                    <div class="chat-message ai" style="display: flex; gap: 10px; align-self: flex-start;">
+                        <span style="font-size: 1.4rem;">🤖</span>
+                        <div>${convertMarkdownToHtml(cleanText)}</div>
                     </div>
                 `;
             }
@@ -603,13 +619,16 @@ ${aiProfilePrompt}
                         }
                     ];
                     const fallbackText = await callGeminiAPI(fallbackContents);
+                    const { cleanText, title, subject } = parseTopicAndSubject(fallbackText);
+                    currentSessionTopic = { title, subject };
+
                     if (chatLog) {
                         chatLog.innerHTML = `
-                            <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
-                                <span style="font-size: 1.2rem;">🤖</span>
+                            <div class="chat-message ai" style="display: flex; gap: 10px; align-self: flex-start;">
+                                <span style="font-size: 1.4rem;">🤖</span>
                                 <div>
                                     <div style="font-size: 0.8rem; color: #e67e22; background: rgba(230, 126, 34, 0.1); padding: 4px 8px; border-radius: 6px; margin-bottom: 8px;">※写真の解析通信で制限が出たため、テキストガイダンスモードで開始しました</div>
-                                    ${convertMarkdownToHtml(fallbackText)}
+                                    ${convertMarkdownToHtml(cleanText)}
                                 </div>
                             </div>
                         `;
@@ -624,8 +643,8 @@ ${aiProfilePrompt}
             // エラー表示と復旧ボタン
             if (chatLog) {
                 chatLog.innerHTML = `
-                    <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
-                        <span style="font-size: 1.2rem;">🤖</span>
+                    <div class="chat-message ai" style="display: flex; gap: 10px; align-self: flex-start;">
+                        <span style="font-size: 1.4rem;">🤖</span>
                         <div style="width: 100%;">
                             <p style="color: #e74c3c; font-weight: bold; margin-bottom: 6px;">⚠️ AI解説の通信でエラーが発生しました</p>
                             <div style="font-size: 0.85rem; color: #546e7a; margin-bottom: 10px; background: rgba(0,0,0,0.03); padding: 8px 10px; border-radius: 8px; font-family: monospace; white-space: pre-wrap;">${escapeHtml(err.message)}</div>
@@ -721,15 +740,16 @@ function sendChatQuestion() {
 ${aiProfilePrompt}
 
 【対話ルール】
-1. 生徒の質問に温かく丁寧に答えつつ、ノートや問題の内容と関連付けて分かりやすく解説してください。
-2. 数式や記号（直線 $l, m$、座標、等式、分数など）は必ず LaTeX 形式（\`$数式$\`）で記述してください。
-3. 回答の最後には、「〜についてどう思う？」「次はここを考えてみる？」などの問いかけを投げかけるか、または「他によく分からない点や質問はある？」と優しく尋ねて対話を継続させてください。
-4. Markdown形式（箇条書き、太字等）で視認性よくまとめてください。`
+1. 生徒の質問に温かく親身に答えつつ、ノートや問題の内容と深く関連付けて分かりやすく解説してください。
+2. 毎回の挨拶や相槌に同じ定型フレーズを繰り返さず、生徒の質問の核心に直接答えてください。
+3. 数式や記号（直線 $l, m$、座標、等式、分数など）は必ず LaTeX 形式（\`$数式$\`）で記述してください。
+4. 回答の最後には、理解を深める問いかけや、「他によく分からない点や質問はある？」と優しく尋ねてください。
+5. Markdown形式（箇条書き、太字等）で視認性よくまとめてください。`
             }]
         });
         contents.push({
             role: 'model',
-            parts: [{ text: "了解しました！質問に分かりやすく答え、数式を美しく表記しながら、最後に対話を促す問いかけを入れます！" }]
+            parts: [{ text: "わかりました！ノートの内容と生徒の質問にしっかり向き合い、自然で分かりやすい解説を行います。" }]
         });
 
         messages.forEach(msg => {
@@ -863,20 +883,39 @@ function saveWakaruSessionAndReturnHome() {
     const teachingPreview = document.getElementById('teaching-image-preview');
     let imageSrc = (teachingPreview && teachingPreview.src && teachingPreview.src.startsWith('data:')) ? teachingPreview.src : null;
 
-    let title = 'わかるくんの解説授業';
+    // 4. 動的トピック・教科の決定
+    let baseTitle = (currentSessionTopic && currentSessionTopic.title) ? currentSessionTopic.title : 'ノート解説授業';
+    let subject = (currentSessionTopic && currentSessionTopic.subject) ? currentSessionTopic.subject : '数学';
+
+    let title = baseTitle;
     if (hasPractice) {
-        title = `わかるくん解説授業 ＆ 練習問題 (得点: ${practiceScoreStr}点)`;
-    } else if (chatHistory.length > 1) {
-        title = 'わかるくんのノート解説＆質疑応答';
+        title = `${baseTitle} ＆ 練習問題 (得点: ${practiceScoreStr}点)`;
+    } else if (chatHistory.length > 2) {
+        title = `${baseTitle}（質疑応答つき）`;
     }
 
-    // 4. 1つの学習記録オブジェクトとして保存
+    let icon = '📚';
+    if (hasPractice) {
+        icon = '🎯';
+    } else if (subject === '数学') {
+        icon = '📐';
+    } else if (subject === '理科') {
+        icon = '🧪';
+    } else if (subject === '英語') {
+        icon = '🔤';
+    } else if (subject === '社会') {
+        icon = '🏛️';
+    } else if (subject === '国語') {
+        icon = '📖';
+    }
+
+    // 5. 1つの学習記録オブジェクトとして保存
     dummyHistory.unshift({
         id: 'h_session_' + Date.now(),
         date: dateString,
-        subject: '数学',
+        subject: subject,
         title: title,
-        icon: hasPractice ? '🎯' : '📚',
+        icon: icon,
         image: imageSrc,
         chat: chatHistory
     });
@@ -1339,12 +1378,9 @@ const allSettingSliders = {
  */
 function buildAISystemPromptProfile() {
     const getVal = (key) => parseInt(localStorage.getItem(key) || '50', 10);
-    const otherPrefs = localStorage.getItem('other-preferences') || '';
+    const otherPrefs = (localStorage.getItem('other-preferences') || '').trim();
 
-    const design = getVal('design-preference');
     const activity = getVal('activity-preference');
-    const motivation = getVal('motivation-preference');
-    const learning = getVal('learning-style');
     const tone = getVal('tone-preference');
     const praise = getVal('praise-preference');
     const length = getVal('length-preference');
@@ -1354,59 +1390,165 @@ function buildAISystemPromptProfile() {
     const interaction = getVal('interaction-preference');
     const strictness = getVal('strictness-preference');
     const hint = getVal('hint-preference');
-    const pace = getVal('pace-preference');
     const energy = getVal('energy-preference');
 
-    // 15のプロンプト要素生成（メタ発言をさせず自然な先生のペルソナとして組み込む）
-    let toneText = tone >= 66 ? "語尾は完全フレンドリーなタメ口（〜だよ！〜ね！〜してみよう！）で親しみやすく話すこと。" : (tone <= 35 ? "丁寧な敬語（〜でございます、〜でしょうか、ご説明いたします）で礼儀正しく話すこと。" : "標準的で親切な言葉遣い（〜ですね、〜してみましょう）で話すこと。");
-    
-    let praiseText = praise >= 66 ? "生徒の頑張りや着眼点を『天才！すごすぎる！大正解！🎉✨』とハイテンションで大絶賛して盛り上げること。" : (praise <= 35 ? "落ち着いたトーンで『よくできました』『正解です』と優しく静かに褒めること。" : "『素晴らしいですね！大正解です』と自然に褒めること。");
-    
-    let lengthText = length >= 70
-        ? "【長くじっくりモード】：背景の成り立ち、思考のステップ、関連する重要知識や別解まで含めて、1つひとつステップを踏んで長く手厚くじっくり丁寧に解説すること。"
+    // 1. 口調・語り口
+    let toneGuide = tone >= 66
+        ? "親しみやすいタメ口（〜だよ、〜ね、〜してみよう）で、距離の近い親切な話し方をすること。"
+        : (tone <= 35
+            ? "丁寧で礼儀正しい敬語（〜です、〜ですね、〜してみましょう）で誠実に話すこと。"
+            : "親切で自然な標準的言葉遣い（〜ですね、〜してみよう）で話すこと。");
+
+    // 2. 褒め方
+    let praiseGuide = praise >= 66
+        ? "生徒の着眼点や努力を熱心に認め、ポジティブに背中を押すこと。"
+        : (praise <= 35
+            ? "落ち着いたトーンで穏やかに生徒の解答や努力を認めること。"
+            : "自然に褒めて励ますこと。");
+
+    // 3. 解説の長さ
+    let lengthGuide = length >= 70
+        ? "【手厚くじっくり】：背景の理由や思考のステップ、関連する重要事項まで含めて、1歩ずつ段階を踏んで手厚く丁寧に解説すること。"
         : (length <= 30
-            ? "【短く簡潔モード】：余計な前置きや長い文章は一切省き、核心となるポイント・公式・解法の要点だけを箇条書き等を使い超短くスッキリ簡潔にまとめること。"
-            : "長すぎず短すぎず、要点がスッと頭に入る標準的なボリュームで分かりやすく解説すること。");
-    
-    let analogyText = analogy >= 66 ? "日常生活や身近な例え話（ゲーム、スポーツ、買い物など）を1つ以上取り入れて直感的にイメージしやすくすること。" : (analogy <= 35 ? "例え話は使わず、論理的で厳密な言葉でシンプルに解説すること。" : "必要に応じて分かりやすい例え話を交えること。");
-    
-    let characterText = character >= 66 ? "頼れる先生というより、隣で一緒に悩んで成長する『友達・相棒・パートナー』の距離感で接すること。" : (character <= 35 ? "頼もしく知的で導いてくれる『先生・講師』の威厳ある優しいキャラクターで接すること。" : "親切で親しみやすい学習サポーターとして接すること。");
-    
-    let strictnessText = strictness >= 66 ? "間違えた箇所や見落としをズバッと指摘し『ここは絶対復習しよう！次は確実に取れるぞ！』と熱血に指導すること。" : (strictness <= 35 ? "全肯定スタイルで、間違えても『大丈夫！素晴らしい挑戦だよ！』と優しく包み込むこと。" : "優しく励ましながら、改善点も的確に伝えること。");
-    
-    let energyText = energy >= 66 ? "熱血エネルギッシュに『燃えてきたぞ！全力でマスターしよう！🔥』とパッション全開で引っ張ること。" : (energy <= 35 ? "落ち着いた知性派・クールな雰囲気で、冷静かつスマートに教えること。" : "明るく前向きなトーンで教えること。");
+            ? "【要点集中・簡潔】：前置きを省略し、核心となる公式・解法のポイントを箇条書き等を活用して短く明快にまとめること。"
+            : "長すぎず短すぎず、要点が自然に頭に入るバランスの良いボリュームで解説すること。");
 
-    let interactionText = interaction >= 66
-        ? "解説の最後には『ここはどうなると思う？』と理解度を深めるミニクイズや問いかけを積極的に投げかけること。"
-        : "解説の最後には『ここまでで分からない所や他に質問はあるかな？』と優しく質問の有無を確認すること。";
-    
-    let hintText = hint >= 66 ? "すぐに答えは言わず、『まずはここに着目してみてごらん！』と段階的なヒントを出して考えさせること。" : "迷わせずダイレクトに正解と手順を直球提示すること。";
+    // 4. 例え話
+    let analogyGuide = analogy >= 66
+        ? "直感的にイメージしやすい身近な例え（日常の出来事など）を自然に交えて解説すること。"
+        : (analogy <= 35
+            ? "例え話は避け、論理的で厳密な言葉でシンプルに解説すること。"
+            : "必要に応じて分かりやすい例えを交えること。");
 
-    let difficultyText = difficulty >= 66 ? "基礎だけでなく、一歩踏み込んだ応用・発展的な視点や裏技・応用知識も紹介すること。" : "難解な用語は避け、基礎の基礎から優しく分かりやすく教えること。";
+    // 5. キャラクター性
+    let characterGuide = character >= 66
+        ? "生徒と同じ目線で一緒に考え、悩みを共有する親身な相棒・サポーターとして接すること。"
+        : (character <= 35
+            ? "知的で頼もしく、体系的に導いてくれる優しい先生・メンターとして接すること。"
+            : "親切で信頼できる学習パートナーとして接すること。");
 
-    let interestText = activity >= 66 ? "（生徒はアクティブ・スポーツ・アウトドア好き）" : "（生徒は読書・ゲーム・インドア好き）";
-    
-    let otherText = otherPrefs ? `生徒の興味・関心分野: "${otherPrefs}"（これを自然に例え話や会話に溶け込ませること）。` : "";
+    // 6. 指導の厳しさ
+    let strictnessGuide = strictness >= 66
+        ? "誤答や見落としやすいポイントを的確に指摘し、どこでつまずいたかを明確に指導すること。"
+        : (strictness <= 35
+            ? "全肯定スタイルで生徒の挑戦を温かく包み込み、安心感を与えること。"
+            : "優しく励ましながら、改善すべきポイントを的確に伝えること。");
+
+    // 7. 熱量
+    let energyGuide = energy >= 66
+        ? "前向きで活力に満ちたトーンで生徒のやる気を引き出すこと。"
+        : (energy <= 35
+            ? "知的で落ち着いたクールな雰囲気で、冷静かつスマートに教えること。"
+            : "明るく穏やかなトーンで教えること。");
+
+    // 8. 問いかけ
+    let interactionGuide = interaction >= 66
+        ? "解説の最後には『この部分はなぜこうなると思う？』など理解を深める問いかけを1つ投げかけること。"
+        : "解説の最後には『ここまでで分からない所や他に質問はあるかな？』と優しく質問を促すこと。";
+
+    // 9. ヒントの出し方
+    let hintGuide = hint >= 66
+        ? "すぐに答えを全部言わず、生徒自身が気づけるような着眼点のヒントを提示すること。"
+        : "迷わせずダイレクトに正解までの明快な手順を直球提示すること。";
+
+    // 10. 難易度
+    let difficultyGuide = difficulty >= 66
+        ? "基礎に加えて、一歩進んだ発展的な視点や応用テクニックも紹介すること。"
+        : "専門用語をかみ砕き、基礎の基礎から直感的に教えること。";
+
+    let otherPrefsGuide = otherPrefs
+        ? `生徒の興味・関心分野: 『${otherPrefs}』\n※超重要注意: 生徒の興味や趣味（例: 『${otherPrefs}』）を、毎回の挨拶や無関係な文脈に無理やり挿入したり、機械的に口走ることは絶対に禁止です。学習内容の本質的な理解に真に役立つ自然なアナロジーがある場合にのみ、さりげなく活用してください。`
+        : "";
 
     return `
-【あなたの指導スタイル・人格ガイドライン】
-※「設定に従い」「指示された通りに」「カスタマイズ通りに」などのメタ発言（設定に関する言及）は一切禁止です。あなた自身の生来の性格・スタイルとして完全に自然体で振る舞ってください。
-・口調: ${toneText}
-・褒め方: ${praiseText}
-・解説の長さ: ${lengthText}
-・例え話: ${analogyText}
-・キャラクター性: ${characterText}
-・指導の厳しさ: ${strictnessText}
-・熱量: ${energyText}
-・最後の問いかけ: ${interactionText}
-・ヒントの出し方: ${hintText}
-・難易度・応用度: ${difficultyText}
-・生徒の傾向: ${interestText} ${otherText}
+【指導方針とペルソナ（自然な会話のための絶対ルール）】
+1. 🚫 【設定のメタ言及・棒読みの絶対禁止】：
+   - 「設定に従って」「あなたの好みに合わせて」「熱血モードで」といった設定自体への言及や、設定項目の丸暗記のような発言は一切禁止です。あなた自身の生来の性格・スタイルとして完全に自然体で振る舞ってください。
+2. 🚫 【決まり文句の機械的繰り返しの禁止（脱テンプレート）】：
+   - 毎回の挨拶や文頭に、同じ定型フレーズや紋切型のセリフを繰り返すのは厳禁です。提示されたノート・プリント・質問の「具体的な問題文・数値・数式・図表」にダイレクトに入り込み、その内容に応じた独自の生きた解説を行ってください。
+3. 🎯 【指導スタイルの自然な体現】：
+   ・言葉遣い: ${toneGuide}
+   ・褒め方: ${praiseGuide}
+   ・解説ボリューム: ${lengthGuide}
+   ・例え話: ${analogyGuide}
+   ・接し方: ${characterGuide}
+   ・指導の厳しさ: ${strictnessGuide}
+   ・熱量: ${energyGuide}
+   ・最後の問いかけ: ${interactionGuide}
+   ・ヒントの出し方: ${hintGuide}
+   ・難易度: ${difficultyGuide}
+   ${otherPrefsGuide}
 
 【数式とテキストの美しさ・視認性ルール（超重要）】
 1. 数式・変数・幾何記号（直線 $l, m$、座標 $(x, y)$、三角形 $\\triangle ABC$、方程式 $y = ax + b$、分数 $\\frac{1}{2}$、面積 $S = \\frac{1}{2}bh$ など）は、必ず LaTeX 形式（インラインは \`$数式$\`、独立数式は \`$$数式$$\`）で表記してください。
 2. 見出し（## や ###）、ステップ分け（【STEP 1】、【STEP 2】など）、箇条書き（- ）、重要な公式・結論の太字（**...**）を効果的に使い、スマホでも一瞬で要点が把握できるように美しく構造化してください。
 `.trim();
+}
+
+/**
+ * AIの応答からTOPICとSUBJECTを抽出する
+ */
+function parseTopicAndSubject(text) {
+    let cleanText = text || '';
+    let title = '';
+    let subject = '数学';
+
+    // 1. <!--TOPIC: ... | SUBJECT: ...--> または [TOPIC: ... | SUBJECT: ...]
+    const tagMatch = cleanText.match(/<!--TOPIC:\s*([^|]+?)\s*\|\s*SUBJECT:\s*([^\->]+?)\s*-->/i) ||
+                     cleanText.match(/\[TOPIC:\s*([^|]+?)\s*\|\s*SUBJECT:\s*([^\]]+?)\s*\]/i);
+
+    if (tagMatch) {
+        title = tagMatch[1].trim().replace(/^【|】$/g, '').replace(/^[#\s]+/, '');
+        subject = tagMatch[2].trim();
+        cleanText = cleanText.replace(tagMatch[0], '').trim();
+    } else {
+        // 2. フォールバック解析
+        const fallback = extractTopicFallback(cleanText);
+        title = fallback.title;
+        subject = fallback.subject;
+    }
+
+    return { cleanText, title, subject };
+}
+
+function extractTopicFallback(text) {
+    let subject = '数学';
+    let title = 'ノート解説授業';
+
+    if (!text) return { title, subject };
+
+    // 教科の自動判別
+    const mathKeywords = ['一次関数', '二次関数', '連立方程式', '三角形', '合同', '相似', '面積', '傾き', '切片', '確率', '因数分解', '平方根', '三平方', '関数', 'グラフ', '数学', '算数'];
+    const scienceKeywords = ['光合成', '呼吸', '細胞', '電流', '電圧', 'オーム', '化学変化', '酸化', '還元', '消化', 'イオン', '生殖', '遺伝', '天体', '地層', '理科'];
+    const englishKeywords = ['英語', '過去形', '現在完了', '不定詞', '動名詞', '受動態', '関係代名詞', '助動詞', '単語', '文法', 'English', 'grammar'];
+    const societyKeywords = ['歴史', '地理', '公民', '江戸', '明治', '幕府', '気候', '憲法', '内閣', '裁判所', '社会'];
+    const japaneseKeywords = ['国語', '古文', '漢文', '品詞', '敬語', '漢字', '説明文', '小説', '随筆', '文学'];
+
+    if (scienceKeywords.some(kw => text.includes(kw))) subject = '理科';
+    else if (englishKeywords.some(kw => text.includes(kw))) subject = '英語';
+    else if (societyKeywords.some(kw => text.includes(kw))) subject = '社会';
+    else if (japaneseKeywords.some(kw => text.includes(kw))) subject = '国語';
+    else if (mathKeywords.some(kw => text.includes(kw))) subject = '数学';
+
+    // 最初の見出し（# や ## や ###）から単元名を抽出
+    const headingMatch = text.match(/^#+\s*(.+)$/m);
+    if (headingMatch && headingMatch[1]) {
+        let rawHeader = headingMatch[1].replace(/^[0-9\.\s]+/, '').replace(/【|】|📖|✨|🎯|💬/g, '').trim();
+        if (rawHeader.length >= 2 && rawHeader.length <= 28) {
+            title = rawHeader;
+            return { title, subject };
+        }
+    }
+
+    // キーワードからタイトル生成
+    for (const kw of [...mathKeywords, ...scienceKeywords, ...englishKeywords, ...societyKeywords, ...japaneseKeywords]) {
+        if (text.includes(kw)) {
+            title = `${kw}のポイント解説`;
+            break;
+        }
+    }
+
+    return { title, subject };
 }
 
 // ==========================================
@@ -1572,7 +1714,13 @@ async function callGeminiAPI(contents, preferredModel = null) {
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ contents })
+                    body: JSON.stringify({
+                        contents,
+                        generationConfig: {
+                            temperature: 0.75,
+                            topP: 0.95
+                        }
+                    })
                 });
             } catch (fetchErr) {
                 // ネットワーク遮断（CORS、広告ブロッカー、オフライン等）
