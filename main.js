@@ -842,26 +842,132 @@ ${aiProfilePrompt}
 }
 
 // ==========================================
-// 💬 AIへの質問チャットロジック
+// 💬 AIへの質問チャットロジック & ファイル添付機能
 // ==========================================
+
+let currentChatAttachment = null;
+let currentHistoryAttachment = null;
+
+function handleChatFileUpload(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const fullDataUrl = e.target.result;
+        // 写真を適度なサイズにリサイズ圧縮（最大幅/高さ 1200px）
+        compressImage(fullDataUrl, 1200, 1200, 0.85, (compressedDataUrl) => {
+            const rawMime = (compressedDataUrl.split(';')[0].split(':')[1] || 'image/jpeg').toLowerCase();
+            let cleanMime = 'image/jpeg';
+            if (rawMime.includes('png')) cleanMime = 'image/png';
+            else if (rawMime.includes('webp')) cleanMime = 'image/webp';
+            
+            const base64Data = (compressedDataUrl.split(',')[1] || '').replace(/[\r\n\s]/g, '');
+
+            currentChatAttachment = {
+                dataUrl: compressedDataUrl,
+                fileName: file.name || '添付写真',
+                mimeType: cleanMime,
+                cleanBase64: base64Data
+            };
+
+            const container = document.getElementById('chat-attachment-preview-container');
+            const imgPreview = document.getElementById('chat-attachment-img-preview');
+            const nameEl = document.getElementById('chat-attachment-name');
+
+            if (imgPreview) imgPreview.src = compressedDataUrl;
+            if (nameEl) nameEl.textContent = `📷 ${file.name || '写真を添付しました'}`;
+            if (container) container.classList.remove('hidden');
+        });
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearChatAttachment() {
+    currentChatAttachment = null;
+    const container = document.getElementById('chat-attachment-preview-container');
+    if (container) container.classList.add('hidden');
+    const fileInput = document.getElementById('chat-file-upload');
+    if (fileInput) fileInput.value = '';
+}
+
+function handleHistoryFileUpload(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const fullDataUrl = e.target.result;
+        compressImage(fullDataUrl, 1200, 1200, 0.85, (compressedDataUrl) => {
+            const rawMime = (compressedDataUrl.split(';')[0].split(':')[1] || 'image/jpeg').toLowerCase();
+            let cleanMime = 'image/jpeg';
+            if (rawMime.includes('png')) cleanMime = 'image/png';
+            else if (rawMime.includes('webp')) cleanMime = 'image/webp';
+            
+            const base64Data = (compressedDataUrl.split(',')[1] || '').replace(/[\r\n\s]/g, '');
+
+            currentHistoryAttachment = {
+                dataUrl: compressedDataUrl,
+                fileName: file.name || '添付写真',
+                mimeType: cleanMime,
+                cleanBase64: base64Data
+            };
+
+            const container = document.getElementById('history-attachment-preview-container');
+            const imgPreview = document.getElementById('history-attachment-img-preview');
+            const nameEl = document.getElementById('history-attachment-name');
+
+            if (imgPreview) imgPreview.src = compressedDataUrl;
+            if (nameEl) nameEl.textContent = `📷 ${file.name || '写真を添付しました'}`;
+            if (container) container.classList.remove('hidden');
+        });
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearHistoryAttachment() {
+    currentHistoryAttachment = null;
+    const container = document.getElementById('history-attachment-preview-container');
+    if (container) container.classList.add('hidden');
+    const fileInput = document.getElementById('history-file-upload');
+    if (fileInput) fileInput.value = '';
+}
+
 function sendChatQuestion() {
     const input = document.getElementById('chat-question-input');
     const chatLog = document.getElementById('ai-chat-log');
     if (!input || !chatLog) return;
     
-    const text = input.value.trim();
-    if (!text) return;
+    let text = input.value.trim();
+    const attachment = currentChatAttachment;
+
+    if (!text && !attachment) return;
+    if (!text && attachment) {
+        text = "この添付した写真（資料・問題）について教えてください。";
+    }
     
     // ユーザーのメッセージを追加
     const userMsg = document.createElement('div');
     userMsg.className = 'chat-message user';
     userMsg.style.cssText = 'display: flex; gap: 8px; align-self: flex-end; flex-direction: row-reverse;';
+    
+    let attachmentHtml = '';
+    if (attachment && attachment.dataUrl) {
+        attachmentHtml = `<img src="${attachment.dataUrl}" class="chat-msg-img-attachment" alt="添付写真" onclick="window.open(this.src)">`;
+    }
+
     userMsg.innerHTML = `
         <span style="font-size: 1.2rem;">👤</span>
-        <p>${escapeHtml(text)}</p>
+        <div>
+            ${attachmentHtml}
+            <p>${escapeHtml(text)}</p>
+        </div>
     `;
     chatLog.appendChild(userMsg);
     input.value = '';
+    
+    // 添付状態をクリア
+    clearChatAttachment();
     
     // スクロールを一番下に
     chatLog.scrollTop = chatLog.scrollHeight;
@@ -895,7 +1001,7 @@ function sendChatQuestion() {
 ${aiProfilePrompt}
 
 【対話ルール】
-1. 生徒の質問に温かく親身に答えつつ、ノートや問題の内容と深く関連付けて分かりやすく解説してください。
+1. 生徒の質問や新しく追加添付された写真の内容に温かく親身に答えつつ、分かりやすく解説してください。
 2. 毎回の挨拶や相槌に同じ定型フレーズを繰り返さず、生徒の質問の核心に直接答えてください。
 3. 数式や記号（直線 $l, m$、座標、等式、分数など）は必ず LaTeX 形式（\`$数式$\`）で記述してください。
 4. 回答の最後には、理解を深める問いかけや、「他によく分からない点や質問はある？」と優しく尋ねてください。
@@ -904,33 +1010,51 @@ ${aiProfilePrompt}
         });
         contents.push({
             role: 'model',
-            parts: [{ text: "わかりました！ノートの内容と生徒の質問にしっかり向き合い、自然で分かりやすい解説を行います。" }]
+            parts: [{ text: "わかりました！ノートや新しく送られた写真の内容、生徒の質問にしっかり向き合い、設定された指導スタイルで分かりやすい解説を行います。" }]
         });
 
-        messages.forEach(msg => {
+        messages.forEach((msg) => {
             const isAi = msg.classList.contains('ai');
-            const textParagraph = msg.querySelector('p, div');
-            if (textParagraph) {
-                let rawText = textParagraph.innerText || textParagraph.textContent;
-                contents.push({
-                    role: isAi ? 'model' : 'user',
-                    parts: [{ text: rawText }]
+            const textParagraph = msg.querySelector('p');
+            const attachedImg = msg.querySelector('img.chat-msg-img-attachment');
+            
+            let rawText = textParagraph ? (textParagraph.innerText || textParagraph.textContent) : (msg.innerText || msg.textContent);
+            const userParts = [];
+
+            if (attachedImg && attachedImg.src && attachedImg.src.startsWith('data:')) {
+                const b64 = attachedImg.src.split(',')[1];
+                const mime = attachedImg.src.split(';')[0].split(':')[1] || 'image/jpeg';
+                userParts.push({
+                    inline_data: {
+                        mime_type: mime,
+                        data: b64.replace(/[\r\n\s]/g, '')
+                    }
                 });
             }
+
+            userParts.push({ text: rawText });
+
+            contents.push({
+                role: isAi ? 'model' : 'user',
+                parts: userParts
+            });
         });
 
-        // ノート画像を添付する
+        // 最初のノート画像があれば全体の文脈として先頭近くにも添付
         const teachingPreview = document.getElementById('teaching-image-preview');
         if (teachingPreview && teachingPreview.src && teachingPreview.src.startsWith('data:')) {
             const base64Data = teachingPreview.src.split(',')[1];
             const mimeType = teachingPreview.src.split(';')[0].split(':')[1] || 'image/jpeg';
-            if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
-                contents[contents.length - 1].parts.push({
-                    inline_data: {
-                        mime_type: mimeType,
-                        data: base64Data
-                    }
-                });
+            if (contents.length > 2 && contents[2].role === 'user') {
+                const hasImg = contents[2].parts.some(p => p.inline_data || p.inlineData);
+                if (!hasImg) {
+                    contents[2].parts.unshift({
+                        inline_data: {
+                            mime_type: mimeType,
+                            data: base64Data.replace(/[\r\n\s]/g, '')
+                        }
+                    });
+                }
             }
         }
 
@@ -967,7 +1091,9 @@ ${aiProfilePrompt}
             aiMsg.style.cssText = 'display: flex; gap: 8px; align-self: flex-start;';
             
             let aiReply = 'ご質問ありがとうございます！平方完成のコツは、xの係数の「半分」の2乗を足して引くことです。例えば x² - 6x であれば、-6の半分の -3 の2乗である 9 を足して引きます。';
-            if (text.includes('平方完成') || text.includes('やり方') || text.includes('公式')) {
+            if (attachment) {
+                aiReply = '新しい写真の追加添付ありがとうございます！写真の問題を確認しました。この問題は公式 $y = ax^2$ の頂点と対称性を利用するとスムーズに解けますよ！';
+            } else if (text.includes('平方完成') || text.includes('やり方') || text.includes('公式')) {
                 aiReply = '平方完成は、以下のステップで行います：<br>1. xの係数の半分の2乗を計算する（-6なら半分の-3の2乗で+9）<br>2. それを式に足して、すぐ引く<br>3. x² - 6x + 9 を (x - 3)² にまとめ、残りの定数項を計算する。<br>焦らず順番に解いてみてね！';
             } else if (text.includes('わから') || text.includes('難しい')) {
                 aiReply = '最初は難しく見えますが、パターンを掴めば大丈夫です！どの計算のステップが一番難しく感じましたか？';
@@ -979,7 +1105,7 @@ ${aiProfilePrompt}
             `;
             chatLog.appendChild(aiMsg);
             chatLog.scrollTop = chatLog.scrollHeight;
-        }, 1000);
+        }, 800);
     }
 }
 
@@ -1405,23 +1531,43 @@ function sendHistoryChatQuestion() {
     const chatLog = document.getElementById('history-chat-log');
     if (!input || !chatLog || !activeHistoryItem) return;
 
-    const text = input.value.trim();
-    if (!text) return;
+    let text = input.value.trim();
+    const attachment = currentHistoryAttachment;
+
+    if (!text && !attachment) return;
+    if (!text && attachment) {
+        text = "この添付した写真（資料・問題）について教えてください。";
+    }
 
     // 1. ユーザーメッセージを追加
     const userMsg = document.createElement('div');
     userMsg.className = 'chat-message user';
     userMsg.style.cssText = 'display: flex; gap: 8px; align-self: flex-end; flex-direction: row-reverse;';
+    
+    let attachmentHtml = '';
+    if (attachment && attachment.dataUrl) {
+        attachmentHtml = `<img src="${attachment.dataUrl}" class="chat-msg-img-attachment" alt="添付写真" onclick="window.open(this.src)">`;
+    }
+
     userMsg.innerHTML = `
         <span style="font-size: 1.2rem;">👤</span>
-        <p>${escapeHtml(text)}</p>
+        <div>
+            ${attachmentHtml}
+            <p>${escapeHtml(text)}</p>
+        </div>
     `;
     chatLog.appendChild(userMsg);
     input.value = '';
 
     // メモリ上のチャットデータにも追加（セッション中保存）
     if (!activeHistoryItem.chat) activeHistoryItem.chat = [];
-    activeHistoryItem.chat.push({ sender: 'user', text: escapeHtml(text) });
+    activeHistoryItem.chat.push({ 
+        sender: 'user', 
+        text: attachmentHtml ? `${attachmentHtml}<p>${escapeHtml(text)}</p>` : escapeHtml(text) 
+    });
+    
+    // 添付状態をクリア
+    clearHistoryAttachment();
     
     saveHistory();
 
@@ -1455,7 +1601,7 @@ function sendHistoryChatQuestion() {
 ${aiProfilePrompt}
 
 【対話ルール】
-1. 過去の会話の流れとノート内容を踏まえて、生徒の質問に分かりやすく的確に回答してください。
+1. 過去の会話の流れやノート、新しく添付された写真の内容を踏まえて、生徒の質問に分かりやすく的確に回答してください。
 2. 設定されたペルソナ・口調・熱量・厳しさ・例え話をはっきりと反映させて回答してください。
 3. 数式や記号は必ず LaTeX 形式（\`$数式$\`）で記述してください。
 4. 回答はMarkdown形式で見やすく整理してください。`
@@ -1463,29 +1609,48 @@ ${aiProfilePrompt}
         });
         contents.push({
             role: 'model',
-            parts: [{ text: "了解しました！設定された指導スタイルに合わせて、過去の学習内容と生徒の質問にしっかり回答します。" }]
+            parts: [{ text: "了解しました！設定された指導スタイルに合わせて、過去の学習内容や追加の写真、生徒の質問にしっかり回答します。" }]
         });
 
         activeHistoryItem.chat.forEach(msg => {
-            // エスケープされているテキストからHTMLタグを除去してプレーンテキストにする
-            let rawText = msg.text.replace(/<[^>]*>/g, '');
+            const rawText = msg.text.replace(/<[^>]*>/g, '');
+            const userParts = [];
+
+            // 添付画像が含まれているかチェック
+            const imgMatch = msg.text.match(/src=["'](data:[^"']+)["']/i);
+            if (imgMatch && imgMatch[1]) {
+                const b64 = imgMatch[1].split(',')[1];
+                const mime = imgMatch[1].split(';')[0].split(':')[1] || 'image/jpeg';
+                userParts.push({
+                    inline_data: {
+                        mime_type: mime,
+                        data: b64.replace(/[\r\n\s]/g, '')
+                    }
+                });
+            }
+
+            userParts.push({ text: rawText });
+
             contents.push({
                 role: msg.sender === 'ai' ? 'model' : 'user',
-                parts: [{ text: rawText }]
+                parts: userParts
             });
         });
 
-        // 過去ログに画像があれば添付する
+        // 過去ログの元画像があれば全体の文脈として先頭近くに添付
         if (activeHistoryItem.image && activeHistoryItem.image.startsWith('data:')) {
             const base64Data = activeHistoryItem.image.split(',')[1];
             const mimeType = activeHistoryItem.image.split(';')[0].split(':')[1] || 'image/jpeg';
-            if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
-                contents[contents.length - 1].parts.push({
-                    inlineData: {
-                        mimeType: mimeType,
-                        data: base64Data
-                    }
-                });
+            if (contents.length > 2 && contents[2].role === 'user') {
+                const hasImg = contents[2].parts.some(p => p.inline_data || p.inlineData);
+                if (!hasImg) {
+                    contents[2].parts.unshift({
+                        inline_data: {
+                            mime_type: mimeType,
+                            data: base64Data.replace(/[\r\n\s]/g, '')
+                        }
+                    });
+                }
             }
         }
 

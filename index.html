@@ -287,9 +287,20 @@
                                 </div>
                             </div>
 
+                            <!-- 添付ファイルプレビュー表示エリア（画像選択時に表示） -->
+                            <div id="chat-attachment-preview-container" class="chat-attachment-preview-container hidden">
+                                <div class="attachment-preview-badge">
+                                    <img id="chat-attachment-img-preview" src="" alt="添付画像">
+                                    <span id="chat-attachment-name" class="attachment-name">写真が添付されました</span>
+                                    <button type="button" class="attachment-remove-btn" onclick="clearChatAttachment()" title="添付を解除">✕</button>
+                                </div>
+                            </div>
+
                             <!-- 質問入力バー -->
                             <div class="chat-input-row">
-                                <input type="text" id="chat-question-input" placeholder="質問を入力してください...（例：平行線の求め方を教えて）" onkeypress="handleChatKeyPress(event)">
+                                <input type="file" id="chat-file-upload" accept="image/*" class="hidden" onchange="handleChatFileUpload(event)">
+                                <button type="button" class="chat-attach-btn" onclick="document.getElementById('chat-file-upload').click()" title="写真・画像を添付する">➕</button>
+                                <input type="text" id="chat-question-input" placeholder="質問を入力してください...（例：この問題の解き方を教えて）" onkeypress="handleChatKeyPress(event)">
                                 <button class="glass-button chat-send-btn" onclick="sendChatQuestion()">送信</button>
                             </div>
 
@@ -383,8 +394,19 @@
                             <div id="history-chat-log" class="teaching-chat-log">
                                 <!-- チャット履歴が動的に表示されます -->
                             </div>
+                            <!-- 添付ファイルプレビュー表示エリア（画像選択時に表示） -->
+                            <div id="history-attachment-preview-container" class="chat-attachment-preview-container hidden">
+                                <div class="attachment-preview-badge">
+                                    <img id="history-attachment-img-preview" src="" alt="添付画像">
+                                    <span id="history-attachment-name" class="attachment-name">写真が添付されました</span>
+                                    <button type="button" class="attachment-remove-btn" onclick="clearHistoryAttachment()" title="添付を解除">✕</button>
+                                </div>
+                            </div>
+
                             <div class="chat-input-row">
-                                <input type="text" id="history-chat-input" placeholder="この会話の続きを質問する...（後日AI連携予定）" onkeypress="handleHistoryChatKeyPress(event)">
+                                <input type="file" id="history-file-upload" accept="image/*" class="hidden" onchange="handleHistoryFileUpload(event)">
+                                <button type="button" class="chat-attach-btn" onclick="document.getElementById('history-file-upload').click()" title="写真・画像を添付する">➕</button>
+                                <input type="text" id="history-chat-input" placeholder="この会話の続きや写真について質問する..." onkeypress="handleHistoryChatKeyPress(event)">
                                 <button class="glass-button chat-send-btn" onclick="sendHistoryChatQuestion()">送信</button>
                             </div>
                         </div>

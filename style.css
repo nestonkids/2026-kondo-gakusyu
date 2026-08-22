@@ -888,11 +888,105 @@ body {
     border: 1px solid rgba(155, 89, 182, 0.12);
 }
 
+.chat-attachment-preview-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.attachment-preview-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.attachment-preview-badge img {
+    width: 38px;
+    height: 38px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.attachment-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #334155;
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-remove-btn {
+    background: #fee2e2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.attachment-remove-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.chat-msg-img-attachment {
+    max-width: 220px;
+    max-height: 180px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
 .chat-input-row {
     display: flex;
     gap: 10px;
+    align-items: center;
     flex-shrink: 0;
     width: 100%;
+}
+
+.chat-attach-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.9);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.chat-attach-btn:hover {
+    background: #ffffff;
+    border-color: var(--accent-purple);
+    color: var(--accent-purple);
+    box-shadow: 0 2px 8px rgba(155, 89, 182, 0.15);
 }
 
 .chat-input-row input {
