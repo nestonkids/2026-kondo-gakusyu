@@ -196,14 +196,18 @@
         </div>
 
         <div id="test-screen" class="screen">
-            <div class="glass-card">
-                <h2 class="screen-title">実力テストに挑戦</h2>
-                <div class="upload-zone">
-                    <span style="font-size:4rem;">📝</span>
-                    <p>現在の学習記録に基づいてテストを生成します</p>
-                    <button class="glass-button" onclick="startTest()">テストを開始する</button>
+            <div class="glass-card" style="max-width: 680px; margin: 0 auto; text-align: center;">
+                <h2 class="screen-title" style="margin-bottom: 8px;">📝 AI総合実力テスト（全20問）</h2>
+                <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 20px;">あなたの学習履歴や練習問題をAIが分析し、苦手重点＋得意確認のテストを作成します！</p>
+                <div class="upload-zone" style="padding: 30px 20px; background: rgba(248, 250, 252, 0.8);">
+                    <span style="font-size:3.8rem; display: block; margin-bottom: 12px;">🧠</span>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #1e293b; margin-bottom: 8px;">苦手克服 70% ＋ 得意・定着確認 30%</h3>
+                    <p style="color: #475569; font-size: 0.88rem; line-height: 1.6; max-width: 480px; margin: 0 auto 20px auto;">
+                        これまでの学習ノートや練習問題で間違えた箇所をAIが重点的にピックアップ。得意な問題も織り交ぜて【全20問・各5点（100点満点）】の実力テストを自動生成します。
+                    </p>
+                    <button class="start-plan-btn" style="width: auto; padding: 12px 35px; font-size: 1.05rem;" onclick="startTest()">🚀 20問テストを開始する</button>
                 </div>
-                <button class="back-button" onclick="switchScreen('home')">🏠 戻る</button>
+                <button class="back-button" onclick="switchScreen('home')" style="margin-top: 15px;">🏠 ホームへ戻る</button>
             </div>
         </div>
 
@@ -212,7 +216,10 @@
             <div class="glass-card" style="justify-content: flex-start; padding: 30px;">
                 <div class="test-paper">
                     <div class="test-paper-header">
-                        <div class="test-title">実力診断テスト</div>
+                        <div>
+                            <div class="test-title">📝 AI総合実力診断テスト（全20問）</div>
+                            <div id="test-topic-subtitle" style="font-size: 0.88rem; color: #546e7a; margin-top: 4px; font-weight: 600;">出題構成：AIがこれまでの学習・練習問題履歴から分析して最適化</div>
+                        </div>
                         <div class="test-meta">
                             <span class="meta-field">実施日: <span id="test-date"></span></span>
                             <span class="meta-field">氏名: <input type="text" placeholder="名前を入力" class="test-name-input" id="test-user-name"></span>
@@ -223,9 +230,25 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 🎯 AI出題分析サマリーバナー -->
+                    <div id="test-composition-banner" class="trash-notice-banner" style="margin-bottom: 20px; background: linear-gradient(135deg, #eff6ff, #fef2f2); border-color: #cbd5e1;">
+                        <span id="test-composition-text">🧠 <strong>AI分析出題:</strong> 🚨 苦手克服 14問 ｜ ✨ 得意・基礎定着 6問 （全20問・各5点）</span>
+                    </div>
                     
                     <div class="test-questions" id="test-questions-container">
-                        <!-- 動的にテスト問題が生成・表示されます -->
+                        <!-- 動的に20問のテスト問題が生成・表示されます -->
+                    </div>
+
+                    <!-- 🤖 わかるくんからの実力テスト講評・アドバイスエリア (採点後に表示) -->
+                    <div id="test-wakaru-advice-box" class="hidden" style="margin-top: 25px; padding: 20px; border-radius: 16px; background: linear-gradient(135deg, rgba(235, 245, 255, 0.95), rgba(240, 235, 255, 0.95)); border: 2px solid var(--accent-purple); box-shadow: 0 4px 15px rgba(155, 89, 182, 0.15);">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.8rem;">🤖</span>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--accent-purple); margin: 0;">わかるくんからの実力テスト講評</h3>
+                        </div>
+                        <div id="test-wakaru-advice-text" style="font-size: 0.95rem; color: #2c3e50; line-height: 1.6;">
+                            <!-- AIによるアドバイスが動的に生成されます -->
+                        </div>
                     </div>
 
                     <!-- 📊 実力テスト統計データボックス (採点後に表示) -->
@@ -233,9 +256,9 @@
 
                     <!-- アクションエリア -->
                     <div class="test-actions" style="display: flex; gap: 15px; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px dashed rgba(0,0,0,0.15);">
-                        <button class="back-button" id="test-abort-btn" onclick="switchScreen('test')" style="margin: 0;">🏠 戻る</button>
+                        <button class="back-button" id="test-abort-btn" onclick="switchScreen('test')" style="margin: 0;">🏠 中断して戻る</button>
                         <div style="display: flex; gap: 10px;">
-                            <button class="start-plan-btn" id="grade-test-btn" onclick="gradeTest()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);">📝 採点する</button>
+                            <button class="start-plan-btn" id="grade-test-btn" onclick="gradeTest()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);">📝 採点する（全20問）</button>
                             <button class="start-plan-btn hidden" id="finish-test-btn" onclick="finishTestSessionAndSave()" style="background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 12px rgba(46, 204, 113, 0.25);">🎯 結果を記録してホームへ戻る</button>
                         </div>
                     </div>

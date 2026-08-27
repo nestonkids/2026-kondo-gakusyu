@@ -1603,11 +1603,372 @@ function switchScreen(screenId) {
 }
 
 // ==========================================
-// 📝 テスト機能の制御ロジック
+// 📝 AI実力テスト機能（全20問 / 苦手重点7割＋得意確認3割）の制御ロジック
 // ==========================================
 let currentTestQuestions = [];
+let lastTestAdvice = '';
+let currentTestAnalysis = { weakCount: 14, strongCount: 6, weakTopics: [], strongTopics: [] };
 
-function startTest() {
+/**
+ * これまでの学習記録・練習問題の履歴を分析し、苦手分野と得意分野を抽出する
+ */
+function analyzeLearningHistoryForTest() {
+    const weakTopics = [];
+    const strongTopics = [];
+    const studiedTopics = [];
+    const subjectsCount = {};
+
+    dummyHistory.forEach(item => {
+        if (!item) return;
+        const sub = item.subject || '総合';
+        subjectsCount[sub] = (subjectsCount[sub] || 0) + 1;
+        if (item.title) studiedTopics.push(item.title);
+
+        if (Array.isArray(item.chat)) {
+            item.chat.forEach(msg => {
+                const txt = msg.text || '';
+                // 練習問題ログやテストログの正誤を分析
+                if (txt.includes('不正解') || txt.includes('✕') || txt.includes('苦手') || txt.includes('もう一度') || txt.includes('間違')) {
+                    const snippet = txt.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 120);
+                    weakTopics.push(`${sub}: ${snippet}`);
+                }
+                if (txt.includes('正解！') || txt.includes('◯') || txt.includes('100点') || txt.includes('満点') || txt.includes('よくできました')) {
+                    const snippet = txt.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 120);
+                    strongTopics.push(`${sub}: ${snippet}`);
+                }
+            });
+        }
+    });
+
+    return {
+        weakTopics: [...new Set(weakTopics)].slice(0, 8),
+        strongTopics: [...new Set(strongTopics)].slice(0, 8),
+        studiedTopics: [...new Set(studiedTopics)].slice(0, 10),
+        subjectsCount
+    };
+}
+
+/**
+ * 20問実力テストを開始（AIが履歴を分析して全20問を生成）
+ */
+async function startTest() {
+    // ローディング画面表示
+    switchScreen('loading');
+    const loadingText = document.querySelector('#loading-screen h3');
+    const loadingSub = document.querySelector('#loading-screen p');
+    const originalH3 = loadingText ? loadingText.textContent : '';
+    const originalSub = loadingSub ? loadingSub.textContent : '';
+
+    if (loadingText) loadingText.textContent = '🧠 AIがこれまでの学習記録を分析中...';
+    if (loadingSub) loadingSub.textContent = '苦手な単元（約7割）と得意な単元（約3割）を抽出して20問テストを作成しています';
+
+    const analysis = analyzeLearningHistoryForTest();
+    const apiKey = localStorage.getItem('gemini-api-key');
+
+    if (apiKey) {
+        try {
+            currentTestQuestions = await generateTestQuestionsWithGemini(analysis);
+        } catch (e) {
+            console.warn('Geminiによる20問テスト生成に失敗、フォールバックエンジンを使用します:', e);
+            currentTestQuestions = generateFallback20TestQuestions(analysis);
+        }
+    } else {
+        await new Promise(resolve => setTimeout(resolve, 1400));
+        currentTestQuestions = generateFallback20TestQuestions(analysis);
+    }
+
+    if (loadingText) loadingText.textContent = originalH3;
+    if (loadingSub) loadingSub.textContent = originalSub;
+
+    renderTestQuestions(currentTestQuestions);
+    switchScreen('test-paper');
+}
+
+/**
+ * Gemini APIを用いて全20問の実力診断テストを生成
+ */
+async function generateTestQuestionsWithGemini(analysis) {
+    const weakStr = analysis.weakTopics.length > 0 ? analysis.weakTopics.join('\n- ') : '一次方程式・二次関数のグラフ、英単語の時制と受動態、電流とオームの法則、歴史の因果関係、文章読解の要点把握';
+    const strongStr = analysis.strongTopics.length > 0 ? analysis.strongTopics.join('\n- ') : '基本計算、英単語の意味、理科の基本用語、漢字の読み書き';
+    const studiedStr = analysis.studiedTopics.length > 0 ? analysis.studiedTopics.join(', ') : '主要5科目（国語、数学、英語、理科、社会）';
+
+    const systemPrompt = `あなたは教育指導のプロフェッショナルAIです。
+生徒のこれまでの学習履歴・ノート・練習問題の正誤記録を分析し、最適な【実力診断テスト 全20問】（各5点/100点満点）を作成してください。
+
+【生徒の学習履歴と分析結果】
+■ 苦手な単元・間違えやすい箇所（ここから重点的に約7割＝13〜14問出題）:
+- ${weakStr}
+
+■ 得意な単元・理解できている箇所（自信・定着確認として約3割＝6〜7問出題）:
+- ${strongStr}
+
+■ 最近学習した内容・単元:
+${studiedStr}
+
+【出題ルール】
+1. 必ず【全20問】のJSON配列形式のみを出力してください。Markdownのコードブロック記法(\`\`\`json ...)は付けず、純粋なJSONのみを返してください。
+2. 出題配分：
+   - 苦手克服・重点復習問題（tag: "🚨 苦手重点"）: 13〜14問
+   - 得意・基礎定着確認問題（tag: "✨ 得意定着"）: 6〜7問
+3. 各問題の形式：
+   - "type": "choice"（4択選択式）を中心（15〜18問程度）とし、一部に "short"（記述・穴埋め）も含めてください。
+   - choiceの場合、options配列に4つの選択肢を入れ、answerにはoptionsの1つと完全一致する正解文字列を指定してください。
+   - 【重要】title（問題文）には選択肢記号（A.や①など）を含めないでください。
+4. 数式や記号は LaTeX 形式（$〜$）で記述してください。
+5. 配点：全問 "points": 5（20問 × 5点 = 100点満点）。
+
+JSON出力フォーマット:
+[
+  {
+    "id": 1,
+    "subject": "数学",
+    "tag": "🚨 苦手重点",
+    "title": "問題文（選択肢を含めない）",
+    "type": "choice",
+    "options": ["A. 選択肢1", "B. 選択肢2", "C. 選択肢3", "D. 選択肢4"],
+    "answer": "A. 選択肢1",
+    "points": 5,
+    "explanation": "なぜこれが正解なのかの丁寧な解説"
+  },
+  ...（計20問）
+]`;
+
+    const contents = [{ role: 'user', parts: [{ text: systemPrompt }] }];
+    const responseText = await callGeminiAPI(contents);
+    let cleanJsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanJsonStr);
+
+    if (Array.isArray(parsed) && parsed.length >= 20) {
+        return parsed.slice(0, 20).map((q, idx) => ({ ...q, id: idx + 1, points: 5 }));
+    } else if (Array.isArray(parsed) && parsed.length > 0) {
+        const fallback = generateFallback20TestQuestions(analysis);
+        const combined = [...parsed, ...fallback.slice(parsed.length)].slice(0, 20);
+        return combined.map((q, idx) => ({ ...q, id: idx + 1, points: 5 }));
+    } else {
+        throw new Error('20問の生成結果が不正です');
+    }
+}
+
+/**
+ * 20問テスト用フォールバック問題生成エンジン（履歴に基づく苦手14問＋得意6問）
+ */
+function generateFallback20TestQuestions(analysis) {
+    // 苦手重点問題バンク（14問分）
+    const weakPool = [
+        {
+            subject: "数学",
+            tag: "🚨 苦手重点",
+            title: "二次関数 $y = 2(x - 1)^2 + 3$ の頂点の座標を答えよ。",
+            type: "choice",
+            options: ["$(1, 3)$", "$(-1, 3)$", "$(1, -3)$", "$(-1, -3)$"],
+            answer: "$(1, 3)$",
+            points: 5,
+            explanation: "二次関数 $y = a(x - p)^2 + q$ の頂点は $(p, q)$ です。したがって頂点は $(1, 3)$ です。"
+        },
+        {
+            subject: "数学",
+            tag: "🚨 苦手重点",
+            title: "連立方程式 $\\begin{cases} 2x + y = 8 \\\\ x - y = 1 \\end{cases}$ の解 $(x, y)$ を求めよ。",
+            type: "choice",
+            options: ["$x = 3, y = 2$", "$x = 2, y = 4$", "$x = 4, y = 0$", "$x = 5, y = -2$"],
+            answer: "$x = 3, y = 2$",
+            points: 5,
+            explanation: "2つの式を足すと $3x = 9 \\Rightarrow x = 3$。第2式に代入して $3 - y = 1 \\Rightarrow y = 2$ となります。"
+        },
+        {
+            subject: "数学",
+            tag: "🚨 苦手重点",
+            title: "直角三角形において、底辺が $6\\text{cm}$、高さが $8\\text{cm}$ のとき、斜辺の長さは何 $\\text{cm}$ か？",
+            type: "choice",
+            options: ["$10\\text{cm}$", "$12\\text{cm}$", "$14\\text{cm}$", "$16\\text{cm}$"],
+            answer: "$10\\text{cm}$",
+            points: 5,
+            explanation: "三平方の定理 $a^2 + b^2 = c^2$ より、$6^2 + 8^2 = 36 + 64 = 100 = 10^2$ となり、斜辺は $10\\text{cm}$ です。"
+        },
+        {
+            subject: "英語",
+            tag: "🚨 苦手重点",
+            title: "「その本は夏目漱石によって書かれました」の英文として正しいものはどれか？",
+            type: "choice",
+            options: ["The book was written by Soseki Natsume.", "The book wrote by Soseki Natsume.", "The book is wrote by Soseki Natsume.", "The book was writing by Soseki Natsume."],
+            answer: "The book was written by Soseki Natsume.",
+            points: 5,
+            explanation: "受動態（受け身）の過去形は「was/were + 過去分詞 + by 〜」で表します。writeの過去分詞は written です。"
+        },
+        {
+            subject: "英語",
+            tag: "🚨 苦手重点",
+            title: "空欄に入る最も適切な関係代名詞を選べ: I know a boy ( _______ ) can speak four languages.",
+            type: "choice",
+            options: ["who", "which", "whose", "where"],
+            answer: "who",
+            points: 5,
+            explanation: "先行詞が「人 (a boy)」であり、関係代名詞節内で主語の働きをするため主格の who を使います。"
+        },
+        {
+            subject: "英語",
+            tag: "🚨 苦手重点",
+            title: "「私は3年間東京に住んでいます」を現在完了形で表した英文として正しいものはどれか？",
+            type: "choice",
+            options: ["I have lived in Tokyo for three years.", "I lived in Tokyo since three years.", "I am living in Tokyo for three years.", "I have been live in Tokyo for three years."],
+            answer: "I have lived in Tokyo for three years.",
+            points: 5,
+            explanation: "継続を表す現在完了形は「have/has + 過去分詞 + for (期間)」で表します。"
+        },
+        {
+            subject: "理科",
+            tag: "🚨 苦手重点",
+            title: "$10\\,\\Omega$ の電熱線に $5\\,\\text{V}$ の電圧をかけたとき、流れる電流は何 $\\text{A}$（アンペア）か？",
+            type: "choice",
+            options: ["$0.5\\,\\text{A}$", "$2\\,\\text{A}$", "$50\\,\\text{A}$", "$0.2\\,\\text{A}$"],
+            answer: "$0.5\\,\\text{A}$",
+            points: 5,
+            explanation: "オームの法則 $I = \\frac{V}{R}$ より、$I = \\frac{5}{10} = 0.5\\,\\text{A}$ です。"
+        },
+        {
+            subject: "理科",
+            tag: "🚨 苦手重点",
+            title: "塩酸と水酸化ナトリウム水溶液を混ぜ合わせたときの中和反応で生じる物質の組み合わせはどれか？",
+            type: "choice",
+            options: ["塩化ナトリウムと水", "炭酸ナトリウムと水素", "塩化カルシウムと酸素", "硫酸ナトリウムと水"],
+            answer: "塩化ナトリウムと水",
+            points: 5,
+            explanation: "酸（$\\text{HCl}$）とアルカリ（$\\text{NaOH}$）の中和反応により、塩（$\\text{NaCl}$：塩化ナトリウム）と水（$\\text{H}_2\\text{O}$）が生成されます。"
+        },
+        {
+            subject: "理科",
+            tag: "🚨 苦手重点",
+            title: "光が空気中から水中に斜めに入射するとき、光の進む向きはどうなるか？",
+            type: "choice",
+            options: ["屈折角が入射角より小さくなるように曲がる", "屈折角が入射角より大きくなるように曲がる", "まったく曲がらず直進する", "すべて境界面で反射して水中に入らない"],
+            answer: "屈折角が入射角より小さくなるように曲がる",
+            points: 5,
+            explanation: "空気中から水やガラスに入るときは、屈折角が入射角よりも小さくなります（境界面の垂線に近づく向きに曲がる）。"
+        },
+        {
+            subject: "社会",
+            tag: "🚨 苦手重点",
+            title: "日本の三権分立において、国会が内閣に対して行使できる権限はどれか？",
+            type: "choice",
+            options: ["内閣不信任の決議", "衆議院の解散", "違憲審査権の行使", "最高裁判所長官の指名"],
+            answer: "内閣不信任の決議",
+            points: 5,
+            explanation: "国会（立法）は内閣（行政）に対して「内閣不信任決議権」を持ちます。衆議院の解散は内閣の権限です。"
+        },
+        {
+            subject: "社会",
+            tag: "🚨 苦手重点",
+            title: "1853年に浦賀に来航し、日本に開国を要求したアメリカの海軍提督は誰か？",
+            type: "choice",
+            options: ["ペリー", "ハリス", "オールコック", "マッカーサー"],
+            answer: "ペリー",
+            points: 5,
+            explanation: "1853年に黒船を率いて浦賀（神奈川県）に来航したのはペリーです。"
+        },
+        {
+            subject: "国語",
+            tag: "🚨 苦手重点",
+            title: "次のうち、「敬語（謙譲語）」として正しい使い方はどれか？",
+            type: "choice",
+            options: ["「先生の元へ伺います」", "「先生が参られます」", "「先生が申されました」", "「先生がおっしゃられました」"],
+            answer: "「先生の元へ伺います」",
+            points: 5,
+            explanation: "「伺う」は自分を低めて相手を敬う謙譲語です。「参る」「申す」は謙譲語なので相手の動作には使えません。"
+        },
+        {
+            subject: "国語",
+            tag: "🚨 苦手重点",
+            title: "「雨降って地固まる」ということわざの意味として最も適切なものはどれか？",
+            type: "choice",
+            options: ["揉め事や困難があった後の方が、かえって良い状態になること", "雨が降ると地面がぬかるんで歩きにくくなること", "準備を怠ると後で大きな損害を被ること", "小さなことの積み重ねが大きな成果につながること"],
+            answer: "揉め事や困難があった後の方が、かえって良い状態になること",
+            points: 5,
+            explanation: "雨が降った後の地面が固く引き締まることから、揉め事の後は基盤がしっかりすることの例えです。"
+        },
+        {
+            subject: "情報",
+            tag: "🚨 苦手重点",
+            title: "インターネットで情報を安全に送受信するために通信を暗号化する仕組みはどれか？",
+            type: "choice",
+            options: ["SSL / TLS (HTTPS)", "DNS", "DHCP", "FTP"],
+            answer: "SSL / TLS (HTTPS)",
+            points: 5,
+            explanation: "Web通信を暗号化して盗聴や改ざんを防ぐ技術が SSL/TLS（HTTPS）です。"
+        }
+    ];
+
+    // 得意・基礎定着確認問題バンク（6問分）
+    const strongPool = [
+        {
+            subject: "数学",
+            tag: "✨ 得意定着",
+            title: "一次方程式 $3x - 5 = 10$ を解いたときの $x$ の値はどれか？",
+            type: "choice",
+            options: ["$x = 5$", "$x = 3$", "$x = 15$", "$x = -5$"],
+            answer: "$x = 5$",
+            points: 5,
+            explanation: "$3x = 10 + 5 \\Rightarrow 3x = 15 \\Rightarrow x = 5$ となります。"
+        },
+        {
+            subject: "英語",
+            tag: "✨ 得意定着",
+            title: "「彼らは放課後にサッカーをします」を表す英文の空欄に入る単語: They ( _______ ) soccer after school.",
+            type: "choice",
+            options: ["play", "plays", "playing", "played"],
+            answer: "play",
+            points: 5,
+            explanation: "主語が複数形の They なので、一般動詞の原形 play を用います。"
+        },
+        {
+            subject: "理科",
+            tag: "✨ 得意定着",
+            title: "植物が光のエネルギーを使って二酸化炭素と水からデンプンと酸素を作る働きを何というか？",
+            type: "choice",
+            options: ["光合成", "呼吸", "蒸散", "消化"],
+            answer: "光合成",
+            points: 5,
+            explanation: "葉緑体で行われる、養分と酸素をつくり出す働きは「光合成」です。"
+        },
+        {
+            subject: "社会",
+            tag: "✨ 得意定着",
+            title: "日本で最も高い山（標高3776m）はどれか？",
+            type: "choice",
+            options: ["富士山", "北岳", "槍ヶ岳", "阿蘇山"],
+            answer: "富士山",
+            points: 5,
+            explanation: "日本最高峰は静岡県・山梨県にまたがる富士山（3776m）です。"
+        },
+        {
+            subject: "国語",
+            tag: "✨ 得意定着",
+            title: "「青天の霹靂（へきれき）」と同じ意味を持つ表現はどれか？",
+            type: "choice",
+            options: ["突然の思いがけない出来事", "雲ひとつない快晴の空", "激しい雷雨に見舞われること", "目標に向かって努力すること"],
+            answer: "突然の思いがけない出来事",
+            points: 5,
+            explanation: "青空に突然激しい雷が鳴ることから、予期せぬ突発的な事件を意味します。"
+        },
+        {
+            subject: "数学",
+            tag: "✨ 得意定着",
+            title: "計算せよ: $(-4) \\times (-3) + (-5)$",
+            type: "choice",
+            options: ["$7$", "$17$", "$-17$", "$-7$"],
+            answer: "$7$",
+            points: 5,
+            explanation: "$(-4) \\times (-3) = 12$、 $12 + (-5) = 7$ です。"
+        }
+    ];
+
+    const questions = [...weakPool, ...strongPool];
+    return questions.map((q, idx) => ({ ...q, id: idx + 1 }));
+}
+
+/**
+ * 20問のテスト問題を画面（test-questions-container）に描画
+ */
+function renderTestQuestions(questions) {
     const container = document.getElementById('test-questions-container');
     if (!container) return;
 
@@ -1620,6 +1981,9 @@ function startTest() {
 
     const scoreDisplay = document.getElementById('test-score-display');
     if (scoreDisplay) scoreDisplay.classList.add('hidden');
+
+    const testAdviceBox = document.getElementById('test-wakaru-advice-box');
+    if (testAdviceBox) testAdviceBox.classList.add('hidden');
 
     const testStatsBox = document.getElementById('test-stats-box');
     if (testStatsBox) {
@@ -1636,103 +2000,152 @@ function startTest() {
     const abortBtn = document.getElementById('test-abort-btn');
     if (abortBtn) abortBtn.classList.remove('hidden');
 
-    let subjectName = '総合';
-    if (dummyHistory.length > 0) {
-        subjectName = dummyHistory[0].subject || '総合';
+    // 苦手問題数と得意問題数のカウント
+    let weakCount = 0;
+    let strongCount = 0;
+    questions.forEach(q => {
+        if (q.tag && q.tag.includes('苦手')) weakCount++;
+        else strongCount++;
+    });
+    currentTestAnalysis.weakCount = weakCount;
+    currentTestAnalysis.strongCount = strongCount;
+
+    const compText = document.getElementById('test-composition-text');
+    if (compText) {
+        compText.innerHTML = `🧠 <strong>AI分析出題:</strong> 🚨 苦手克服 ${weakCount}問 ｜ ✨ 得意・基礎定着 ${strongCount}問 （全${questions.length}問・各5点 / 100点満点）`;
     }
 
-    currentTestQuestions = [
-        {
-            title: `【問 1】 (${subjectName}) 次の計算に答えよ: $15 \\times 6 - 25$`,
-            answer: '65',
-            type: 'short',
-            points: 30,
-            explanation: '$15 \\times 6 = 90$、$90 - 25 = 65$ です。'
-        },
-        {
-            title: `【問 2】 (英語) 「私は昨日勉強しました」の英文の空欄に入る単語を答えよ: I ( _______ ) yesterday.`,
-            answer: 'studied',
-            type: 'short',
-            points: 35,
-            explanation: 'study の過去形は studied です。'
-        },
-        {
-            title: `【問 3】 (学習法) 間違えた問題を復習する際、最も効果的な行動はどれか？`,
-            answer: '解き直し',
-            keywords: ['解き直し', '復習', '確認', 'やり直し', '反復', '自分で解く'],
-            type: 'short',
-            points: 35,
-            explanation: '解説を読むだけでなく、自分の力で解き直すことが最も大切です。'
-        }
-    ];
+    let html = '';
+    questions.forEach((q, idx) => {
+        const qNum = idx + 1;
+        const cleanTitle = cleanQuestionTitle(q.title, q.options);
+        const titleHtml = renderMathFormulas(processInlineMarkdown(escapeHtml(cleanTitle)));
+        const tagClass = q.tag && q.tag.includes('苦手') ? 'trash-item-subject' : 'trash-remaining-badge';
+        const tagText = q.tag || '実力確認';
+        const subText = q.subject || '総合';
 
-    container.innerHTML = '';
-    currentTestQuestions.forEach((q, idx) => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'test-question-item';
-        itemDiv.style.marginBottom = '25px';
-        itemDiv.style.paddingBottom = '20px';
-        itemDiv.style.borderBottom = '1px dashed rgba(0,0,0,0.12)';
-
-        const titleHtml = renderMathFormulas(processInlineMarkdown(escapeHtml(q.title)));
-        const explanationHtml = renderMathFormulas(processInlineMarkdown(escapeHtml(q.explanation)));
-
-        itemDiv.innerHTML = `
-            <div class="q-title" style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; line-height: 1.6; color: var(--text-color);">
-                ${titleHtml} <span class="q-points" style="color: #7f8c8d; font-size: 0.85rem; font-weight: normal;">（${q.points}点）</span>
-            </div>
-            <div class="q-answer-area">
-                <span style="font-weight: 600; color: #546e7a;">答：</span>
-                <input type="text" id="test-q-${idx}" placeholder="解答を入力" class="q-input-medium">
-            </div>
-            <div class="q-feedback hidden" id="test-fb-${idx}">
-                <div class="feedback-header">
-                    <span class="grade-mark mark-correct">◯</span>
-                    <strong class="grade-text" style="font-size: 0.95rem;">正解</strong>
+        html += `
+            <div class="test-question-item" id="test-item-${qNum}" style="margin-bottom: 26px; padding-bottom: 22px; border-bottom: 1px dashed rgba(0,0,0,0.12);">
+                <div class="q-title" style="font-size: 1.02rem; font-weight: 700; margin-bottom: 12px; line-height: 1.65; color: var(--text-color);">
+                    <span class="q-num" style="color: var(--accent-blue); font-weight: 800; margin-right: 6px;">【問 ${qNum} / 20】</span>
+                    <span style="font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569; margin-right: 6px;">${escapeHtml(subText)}</span>
+                    <span style="font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-right: 8px; background: ${tagText.includes('苦手') ? '#fee2e2; color: #b91c1c;' : '#dcfce7; color: #15803d;'}">${escapeHtml(tagText)}</span>
+                    ${titleHtml}
+                    <span class="q-points" style="font-size: 0.82rem; color: #7f8c8d; font-weight: normal; margin-left: 4px;">（5点）</span>
                 </div>
-                <div class="q-explanation">${explanationHtml}</div>
+        `;
+
+        if (q.type === 'choice' && Array.isArray(q.options)) {
+            html += `<div class="choice-options-list">`;
+            q.options.forEach((opt, optIdx) => {
+                const radioId = `tq_${qNum}_opt_${optIdx}`;
+                const formattedOpt = renderMathFormulas(processInlineMarkdown(escapeHtml(opt)));
+                html += `
+                    <label class="choice-option-card" for="${radioId}">
+                        <input type="radio" name="tq_ans_${qNum}" id="${radioId}" value="${escapeHtml(opt)}" class="choice-radio-input" onchange="highlightSelectedChoice(this)">
+                        <span class="choice-option-text">${formattedOpt}</span>
+                    </label>
+                `;
+            });
+            html += `</div>`;
+        } else {
+            // テキスト入力形式
+            html += `
+                <div class="q-answer-area">
+                    <span style="font-weight: 600; color: #546e7a;">答：</span>
+                    <input type="text" id="tq_ans_text_${qNum}" placeholder="解答を入力してください" class="q-input-long">
+                </div>
+            `;
+        }
+
+        const formattedExplanation = renderMathFormulas(processInlineMarkdown(escapeHtml(q.explanation || '')));
+        const formattedAnswer = renderMathFormulas(processInlineMarkdown(escapeHtml(q.answer || '')));
+
+        // 採点後フィードバックエリア
+        html += `
+                <div class="q-feedback hidden" id="test-feedback-${qNum}" style="margin-top: 14px;">
+                    <div class="feedback-header">
+                        <span class="grade-mark mark-correct">◯</span>
+                        <strong class="grade-text" style="font-size: 0.95rem; color: var(--text-color);">【正解】: ${formattedAnswer}</strong>
+                    </div>
+                    <div class="q-explanation">
+                        <strong style="color: #475569;">【解説】</strong><br>
+                        ${formattedExplanation}
+                    </div>
+                </div>
             </div>
         `;
-        container.appendChild(itemDiv);
     });
 
-    switchScreen('test-paper');
+    container.innerHTML = html;
 }
 
-function gradeTest() {
-    let score = 0;
+/**
+ * 20問実力テストの採点
+ */
+async function gradeTest() {
+    if (!currentTestQuestions || currentTestQuestions.length === 0) return;
+
+    let totalScore = 0;
+    let weakCorrect = 0;
+    let strongCorrect = 0;
+    const resultsSummary = [];
+
     currentTestQuestions.forEach((q, idx) => {
-        const inputEl = document.getElementById(`test-q-${idx}`);
-        const userAns = inputEl ? inputEl.value.trim() : '';
-        const fbEl = document.getElementById(`test-fb-${idx}`);
-        
-        let isCorrect = false;
-        if (q.keywords && Array.isArray(q.keywords)) {
-            isCorrect = q.keywords.some(kw => userAns.includes(kw));
+        const qNum = idx + 1;
+        let userAns = '';
+
+        if (q.type === 'choice') {
+            const selectedRadio = document.querySelector(`input[name="tq_ans_${qNum}"]:checked`);
+            if (selectedRadio) userAns = selectedRadio.value.trim();
         } else {
-            isCorrect = (userAns.toLowerCase() === q.answer.toLowerCase());
+            const textInput = document.getElementById(`tq_ans_text_${qNum}`);
+            if (textInput) userAns = textInput.value.trim();
         }
 
-        if (isCorrect) score += q.points;
+        const isCorrect = checkPracticeAnswer(userAns, q.answer);
+        if (isCorrect) {
+            totalScore += 5;
+            if (q.tag && q.tag.includes('苦手')) weakCorrect++;
+            else strongCorrect++;
+        }
 
-        if (fbEl) {
-            fbEl.classList.remove('hidden');
-            const markEl = fbEl.querySelector('.grade-mark');
-            const textEl = fbEl.querySelector('.grade-text');
+        resultsSummary.push({
+            num: qNum,
+            subject: q.subject || '総合',
+            tag: q.tag || '',
+            title: q.title,
+            isCorrect: isCorrect,
+            userAns: userAns || '未入力',
+            correctAns: q.answer
+        });
+
+        // フィードバック表示
+        const feedbackEl = document.getElementById(`test-feedback-${qNum}`);
+        if (feedbackEl) {
+            feedbackEl.classList.remove('hidden');
+            const markEl = feedbackEl.querySelector('.grade-mark');
+            const textEl = feedbackEl.querySelector('.grade-text');
             if (markEl) {
                 markEl.textContent = isCorrect ? '◯' : '✕';
                 markEl.className = isCorrect ? 'grade-mark mark-correct' : 'grade-mark mark-incorrect';
             }
             if (textEl) {
-                textEl.textContent = isCorrect ? `正解！（+${q.points}点）` : `不正解（正解: ${q.answer}）`;
+                const formattedAnswer = renderMathFormulas(processInlineMarkdown(escapeHtml(q.answer || '')));
+                textEl.innerHTML = isCorrect ? `正解！（+5点）` : `不正解（【正解】: ${formattedAnswer}）`;
                 textEl.style.color = isCorrect ? '#27ae60' : '#c0392b';
             }
         }
-        if (inputEl) inputEl.readOnly = true;
+
+        // 入力を無効化
+        const radios = document.querySelectorAll(`input[name="tq_ans_${qNum}"]`);
+        radios.forEach(r => r.disabled = true);
+        const textInput = document.getElementById(`tq_ans_text_${qNum}`);
+        if (textInput) textInput.readOnly = true;
     });
 
     const scoreVal = document.getElementById('test-score-val');
-    if (scoreVal) scoreVal.textContent = score;
+    if (scoreVal) scoreVal.textContent = totalScore;
     const scoreDisp = document.getElementById('test-score-display');
     if (scoreDisp) scoreDisp.classList.remove('hidden');
 
@@ -1743,10 +2156,62 @@ function gradeTest() {
     const abortBtn = document.getElementById('test-abort-btn');
     if (abortBtn) abortBtn.classList.add('hidden');
 
-    // 📊 実力テスト採点時も統計データを表示！
-    renderLearningStats(score, '総合', 'test-stats-box');
+    // わかるくんからの講評アドバイスを生成・表示
+    const adviceBox = document.getElementById('test-wakaru-advice-box');
+    const adviceTextEl = document.getElementById('test-wakaru-advice-text');
+    if (adviceBox && adviceTextEl) {
+        adviceBox.classList.remove('hidden');
+        adviceTextEl.innerHTML = '<span style="color: #64748b;">🤖 わかるくんがあなたの20問テスト結果を分析して講評を書いています...</span>';
+
+        const weakRate = currentTestAnalysis.weakCount > 0 ? Math.round((weakCorrect / currentTestAnalysis.weakCount) * 100) : 0;
+        const strongRate = currentTestAnalysis.strongCount > 0 ? Math.round((strongCorrect / currentTestAnalysis.strongCount) * 100) : 0;
+
+        let dynamicAdvice = '';
+        if (totalScore >= 80) {
+            dynamicAdvice = `🎉 <strong>すばらしい！${totalScore}点の高得点です！</strong><br>` +
+                `苦手重点問題（${currentTestAnalysis.weakCount}問中 ${weakCorrect}問正解 / 正答率 ${weakRate}%）もしっかり克服できています。<br>` +
+                `得意分野（${currentTestAnalysis.strongCount}問中 ${strongCorrect}問正解）も盤石です！この調子でどんどん自信を深めていきましょう！`;
+        } else if (totalScore >= 50) {
+            dynamicAdvice = `👍 <strong>よく頑張りました！得点は ${totalScore}点 です！</strong><br>` +
+                `得意分野（正答率 ${strongRate}%）はしっかり取れています。苦手重点問題（${currentTestAnalysis.weakCount}問中 ${weakCorrect}問正解）で間違えたところは、` +
+                `解説をよく読んで「わかるくんに教えてもらう」でノートを再確認してみましょう！`;
+        } else {
+            dynamicAdvice = `🌱 <strong>20問のチャレンジ、お疲れさまでした！（得点: ${totalScore}点）</strong><br>` +
+                `今回は苦手な単元を重点的に14問出題したため、少し難しく感じたかもしれませんが、これが成長の大チャンスです！<br>` +
+                `間違えた問題の解説を一つずつ確認して、次回は満点を目指して復習していきましょう！`;
+        }
+
+        const apiKey = localStorage.getItem('gemini-api-key');
+        if (apiKey) {
+            try {
+                const prompt = `生徒が【20問のパーソナライズ実力テスト（苦手重点${currentTestAnalysis.weakCount}問、得意確認${currentTestAnalysis.strongCount}問）】を受験しました。
+結果:
+- 総合得点: ${totalScore} / 100点
+- 苦手重点問題の正解数: ${weakCorrect} / ${currentTestAnalysis.weakCount}問
+- 得意定着問題の正解数: ${strongCorrect} / ${currentTestAnalysis.strongCount}問
+各問題の結果概要:
+${resultsSummary.map(r => `問${r.num} [${r.subject} ${r.tag}]: ${r.isCorrect ? '◯正解' : '✕不正解'} (${r.title})`).join('\n')}
+
+生徒を温かく励まし、苦手克服の成果やこれからの学習のポイントを3〜4文程度で優しく前向きにアドバイスしてください。`;
+                const contents = [{ role: 'user', parts: [{ text: prompt }] }];
+                const aiResp = await callGeminiAPI(contents);
+                dynamicAdvice = convertMarkdownToHtml(aiResp);
+            } catch (e) {
+                console.warn('AI講評生成エラー、フォールバックを使用:', e);
+            }
+        }
+
+        lastTestAdvice = dynamicAdvice;
+        adviceTextEl.innerHTML = dynamicAdvice;
+    }
+
+    // 📊 実力テスト統計データボックスを表示
+    renderLearningStats(totalScore, 'AI実力テスト(20問)', 'test-stats-box');
 }
 
+/**
+ * テスト完了＆履歴保存
+ */
 function finishTestSessionAndSave() {
     const scoreVal = document.getElementById('test-score-val');
     const score = scoreVal ? scoreVal.textContent : '0';
@@ -1758,19 +2223,40 @@ function finishTestSessionAndSave() {
     const dateString = `${yyyy}/${mm}/${dd}`;
 
     const chatHistory = [
-        { sender: 'ai', text: `📝 <strong>実力診断テスト結果: ${score} / 100 点</strong>` }
+        { sender: 'ai', text: `📝 <strong>AI総合実力テスト（全20問）結果: ${score} / 100 点</strong>` }
     ];
 
-    currentTestQuestions.forEach((q, idx) => {
-        const inputEl = document.getElementById(`test-q-${idx}`);
-        const userAns = inputEl ? inputEl.value : '';
+    if (lastTestAdvice) {
         chatHistory.push({
             sender: 'ai',
-            text: `<strong>${escapeHtml(q.title)}</strong><br>・あなたの解答: ${escapeHtml(userAns || '未入力')}<br>・解説: ${escapeHtml(q.explanation)}`
+            text: `🤖 <strong>わかるくんからの講評:</strong><br>${lastTestAdvice}`
+        });
+    }
+
+    currentTestQuestions.forEach((q, idx) => {
+        const qNum = idx + 1;
+        let userAns = '';
+        if (q.type === 'choice') {
+            const selectedRadio = document.querySelector(`input[name="tq_ans_${qNum}"]:checked`);
+            if (selectedRadio) userAns = selectedRadio.value;
+        } else {
+            const textInput = document.getElementById(`tq_ans_text_${qNum}`);
+            if (textInput) userAns = textInput.value;
+        }
+
+        const isCorrect = checkPracticeAnswer(userAns, q.answer);
+
+        chatHistory.push({
+            sender: 'ai',
+            text: `<strong>【問 ${qNum}】[${escapeHtml(q.subject || '')} ${escapeHtml(q.tag || '')}] ${escapeHtml(q.title)}</strong><br>` +
+                `・判定: ${isCorrect ? '⭕ 正解 (+5点)' : '❌ 不正解'}<br>` +
+                `・あなたの解答: ${escapeHtml(userAns || '未入力')}<br>` +
+                `・正解: ${escapeHtml(q.answer)}<br>` +
+                `・解説: ${escapeHtml(q.explanation)}`
         });
     });
 
-    const testTitle = `実力診断テスト (得点: ${score}点)`;
+    const testTitle = `AI実力テスト全20問 (得点: ${score}点)`;
 
     dummyHistory.unshift({
         id: 'h_session_' + Date.now(),
