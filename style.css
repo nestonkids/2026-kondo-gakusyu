@@ -88,7 +88,7 @@ body {
     box-sizing: border-box;
 }
 
-/* 画面の切り替え設定（自然な縦拡張と全画面フィット） */
+/* 画面の切り替え設定（自然な縦拡張と全画面フィット＆心地よいふわっとトランジション） */
 .screen {
     display: none;
     width: 100%;
@@ -98,13 +98,32 @@ body {
     justify-content: flex-start;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease;
 }
 
 .screen.active {
     display: flex;
     opacity: 1;
     pointer-events: auto;
+    animation: screenFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes screenFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .screen.active {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
 }
 
 /* ✨ クリーンカードデザイン（スリムパディングで表示領域を最大化） */
@@ -2085,7 +2104,7 @@ body {
     .screen.active {
         display: flex;
         opacity: 1;
-        transform: none;
+        animation: screenFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     .glass-card {
