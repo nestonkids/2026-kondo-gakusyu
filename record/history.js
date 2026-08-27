@@ -603,12 +603,17 @@ function isPomeSecretCommand(str) {
         .replace(/[？\?！\!・_\s]/g, '')
         .toLowerCase();
 
-    return (
-        normalized === 'pomekososikoudayona' ||
-        normalized === 'ぽめこそしこうだよな' ||
-        normalized === 'ポメこそ至高だよな' ||
-        normalized === 'ポメこそしこうだよな'
-    );
+    // 1. ローマ字パターン
+    if (normalized.includes('pome') || normalized.includes('pomekoso') || normalized === 'pomekososikoudayona') {
+        return true;
+    }
+
+    // 2. 日本語パターン
+    if (cleanStr.includes('ポメ') || cleanStr.includes('ぽめ') || cleanStr.includes('至高') || cleanStr.includes('しこう')) {
+        return true;
+    }
+
+    return false;
 }
 
 let isPomeTransitioning = false;

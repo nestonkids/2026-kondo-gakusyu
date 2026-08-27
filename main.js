@@ -726,19 +726,23 @@ function isPomeSecretCommand(str) {
     const cleanStr = str.trim();
     if (!cleanStr) return false;
 
-    // 正規化（全角英数記号を半角化、空白・記号除去、小文字化）
+    // 半角化・小文字化・記号除去
     const normalized = cleanStr
         .replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
         .replace(/[？\?！\!・_\s]/g, '')
         .toLowerCase();
 
-    // 完全一致判定（半角ローマ字・全角ローマ字・ひらがな・カタカナすべてに対応）
-    return (
-        normalized === 'pomekososikoudayona' ||
-        normalized === 'ぽめこそしこうだよな' ||
-        normalized === 'ポメこそ至高だよな' ||
-        normalized === 'ポメこそしこうだよな'
-    );
+    // 1. ローマ字パターン（pome, pomekoso, pomekososikoudayona 等）
+    if (normalized.includes('pome') || normalized.includes('pomekoso') || normalized === 'pomekososikoudayona') {
+        return true;
+    }
+
+    // 2. 日本語パターン（ポメ, ぽめ, ぽめこそ, 至高 等）
+    if (cleanStr.includes('ポメ') || cleanStr.includes('ぽめ') || cleanStr.includes('至高') || cleanStr.includes('しこう')) {
+        return true;
+    }
+
+    return false;
 }
 
 function openPomeWhiteoutScreen() {
