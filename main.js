@@ -1586,32 +1586,46 @@ function escapeHtml(str) {
 }
 
 // ==========================================
-// 🔄 画面を切り替える関数
+// 🔄 画面を切り替える関数（ふわっと滑らかなクロスフェード遷移）
 // ==========================================
+let isScreenTransitioning = false;
+
 function switchScreen(screenId) {
     if (screenId === 'test') {
         updateTestScreenState();
     }
 
     const targetScreenId = `${screenId}-screen`;
-    const screens = document.querySelectorAll('.screen');
+    const targetScreen = document.getElementById(targetScreenId);
+    if (!targetScreen) return;
 
-    screens.forEach(screen => {
-        if (screen.id === targetScreenId) {
-            screen.classList.remove('active');
-            const card = screen.querySelector('.glass-card');
-            if (card) {
-                card.style.animation = 'none';
-                void card.offsetWidth; // 強制リフロー（アニメーションを確実に再発火）
-                card.style.animation = '';
-                card.scrollTop = 0;
+    const currentActiveScreens = Array.from(document.querySelectorAll('.screen.active'));
+    
+    // 現在アクティブな画面がある場合、滑らかにフェードアウトさせてから切り替える
+    if (currentActiveScreens.length > 0) {
+        currentActiveScreens.forEach(s => {
+            if (s.id !== targetScreenId) {
+                s.classList.add('screen-fade-out');
             }
-            screen.classList.add('active');
-        } else {
-            screen.classList.remove('active');
-        }
-    });
-    window.scrollTo(0, 0);
+        });
+
+        setTimeout(() => {
+            currentActiveScreens.forEach(s => {
+                s.classList.remove('active', 'screen-fade-out');
+            });
+            targetScreen.classList.remove('screen-fade-out');
+            targetScreen.classList.add('active');
+            const card = targetScreen.querySelector('.glass-card');
+            if (card) card.scrollTop = 0;
+            window.scrollTo(0, 0);
+        }, 120);
+    } else {
+        targetScreen.classList.remove('screen-fade-out');
+        targetScreen.classList.add('active');
+        const card = targetScreen.querySelector('.glass-card');
+        if (card) card.scrollTop = 0;
+        window.scrollTo(0, 0);
+    }
 }
 
 /**
