@@ -1,13 +1,10 @@
 // ==========================================
 // 📝 データと初期設定
-// ===========================// デフォルトの履歴データ（サンプルデータは削除し、実際にやったことのみ記録されます）
+// ==========================================
 const defaultHistory = [];
 
 let dummyHistory = [];
 
-// ==========================================
-// 💾 ローカルストレージ連携
-// ==========================================
 // ==========================================
 // 💾 ローカルストレージ連携
 // ==========================================
@@ -61,6 +58,333 @@ function saveHistory() {
                 console.error('Critical localStorage save failure:', err3);
             }
         }
+    }
+}
+
+// ==========================================
+// 🗑️ 削除データ保持管理（3日間保持 / 2回右クリック復元 / SAVE入力検知）
+// ==========================================
+const TRASH_STORAGE_KEY = 'ai-study-trash';
+const TRASH_RETENTION_MS = 3 * 24 * 60 * 60 * 1000; // 3日間 (72時間)
+
+/**
+ * 保持されているゴミ箱データを読み込み、3日以上経過したデータを自動消去する
+ */
+function loadTrashHistory() {
+    const saved = localStorage.getItem(TRASH_STORAGE_KEY);
+    if (!saved) return [];
+    try {
+        const list = JSON.parse(saved);
+        if (!Array.isArray(list)) return [];
+        const now = Date.now();
+        // 3日以内のデータのみ残す（3日以上経過したものは自動削除）
+        const validList = list.filter(item => {
+            if (!item || !item.deletedAt) return false;
+            return (now - item.deletedAt) < TRASH_RETENTION_MS;
+        });
+        if (validList.length !== list.length) {
+            saveTrashHistory(validList);
+        }
+        return validList;
+    } catch (e) {
+        console.error('Failed to parse trash history', e);
+        return [];
+    }
+}
+
+/**
+ * ゴミ箱データを保存する
+ */
+function saveTrashHistory(trashList) {
+    try {
+        localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trashList));
+    } catch (e) {
+        console.warn('Trash save fallback attempt:', e);
+        try {
+            const textOnly = trashList.map(item => ({ ...item, image: null }));
+            localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(textOnly));
+        } catch (err2) {
+            console.error('Failed to save trash history:', err2);
+        }
+    }
+}
+
+/**
+ * 削除されたアイテムをゴミ箱（3日間保持）に追加
+ */
+function addToTrashHistory(items) {
+    if (!items || items.length === 0) return;
+    const currentTrash = loadTrashHistory();
+    const now = Date.now();
+
+    const newTrashItems = items.map(item => ({
+        ...item,
+        deletedAt: item.deletedAt || now
+    }));
+
+    const existingIds = new Set(newTrashItems.map(i => i.id));
+    const filteredExisting = currentTrash.filter(i => !existingIds.has(i.id));
+    const updatedTrash = [...newTrashItems, ...filteredExisting];
+
+    saveTrashHistory(updatedTrash);
+}
+
+/**
+ * 残り保持時間をフォーマット（例: 残り 2日 14時間）
+ */
+function formatTrashRemainingTime(deletedAt) {
+    const elapsed = Date.now() - (deletedAt || Date.now());
+    const remainingMs = TRASH_RETENTION_MS - elapsed;
+    if (remainingMs <= 0) return '間もなく完全消去';
+
+    const totalMinutes = Math.floor(remainingMs / (1000 * 60));
+    const totalHours = Math.floor(totalMinutes / 60);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) {
+        return `残り ${days}日 ${hours}時間`;
+    } else if (hours > 0) {
+        return `残り ${hours}時間 ${minutes}分`;
+    } else {
+        return `残り ${minutes}分`;
+    }
+}
+
+/**
+ * 保持記録モーダルを開く
+ */
+function openTrashModal() {
+    const modal = document.getElementById('trash-modal');
+    if (!modal) return;
+    renderTrashList();
+    modal.classList.remove('hidden');
+}
+
+/**
+ * 保持記録モーダルを閉じる
+ */
+function closeTrashModal() {
+    const modal = document.getElementById('trash-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    trashRightClickState.targetId = null;
+    trashRightClickState.timestamp = 0;
+    clearTimeout(trashRightClickState.timer);
+}
+
+/**
+ * 保持記録リストを描画
+ */
+function renderTrashList() {
+    const trashList = loadTrashHistory();
+    const container = document.getElementById('trash-list-container');
+    const countLabel = document.getElementById('trash-item-count-label');
+
+    if (countLabel) {
+        countLabel.textContent = `保持中: ${trashList.length}件`;
+    }
+
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (trashList.length === 0) {
+        container.innerHTML = `
+            <div class="trash-empty-state">
+                <span>🍃</span>
+                <p style="font-weight: 700; font-size: 1.05rem; margin: 0; color: #334155;">現在、保持されている削除データはありません</p>
+                <p style="font-size: 0.85rem; margin: 4px 0 0 0; color: #94a3b8;">削除された学習記録は3日間ここに保持され、自動的に消去されます。</p>
+            </div>
+        `;
+        return;
+    }
+
+    trashList.forEach(item => {
+        const card = document.createElement('div');
+        card.id = `trash-item-${item.id}`;
+        card.className = 'trash-item-card';
+        card.title = '右クリックを2回（ダブル右クリック）すると復元されます';
+
+        const itemTitle = item.title || '無題の学習セッション';
+        const itemSubject = item.subject || '学習';
+        const itemIcon = item.icon || '📚';
+        const itemDate = item.date || '日時不明';
+        const deletedDateStr = item.deletedAt ? new Date(item.deletedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+        const remainingStr = formatTrashRemainingTime(item.deletedAt);
+
+        card.innerHTML = `
+            <div class="trash-item-left">
+                <div class="trash-item-icon">${itemIcon}</div>
+                <div class="trash-item-info">
+                    <div class="trash-item-meta">
+                        <span class="trash-item-subject">${escapeHtml(itemSubject)}</span>
+                        <span>📅 学習日: ${escapeHtml(itemDate)}</span>
+                        ${deletedDateStr ? `<span>🗑️ 削除: ${escapeHtml(deletedDateStr)}</span>` : ''}
+                    </div>
+                    <h4 class="trash-item-title">${escapeHtml(itemTitle)}</h4>
+                </div>
+            </div>
+            <div class="trash-item-right">
+                <span class="trash-remaining-badge">⏳ ${escapeHtml(remainingStr)}</span>
+                <span class="trash-hint-badge" id="trash-hint-${item.id}">🖱️ 2回右クリックで復元</span>
+            </div>
+        `;
+
+        // 右クリックイベントを登録（2回右クリックで復元）
+        card.addEventListener('contextmenu', (e) => handleTrashItemRightClick(e, item.id));
+
+        container.appendChild(card);
+    });
+}
+
+// ダブル右クリック判定管理用
+let trashRightClickState = {
+    targetId: null,
+    timestamp: 0,
+    timer: null
+};
+
+/**
+ * 保持記録アイテムの右クリック処理（2回右クリックで復元）
+ */
+function handleTrashItemRightClick(e, id) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const now = Date.now();
+    const itemCard = document.getElementById(`trash-item-${id}`);
+    const hintBadge = document.getElementById(`trash-hint-${id}`);
+
+    // 同じアイテムに対して 1500ms 以内に2回目の右クリックが行われたか判定
+    if (trashRightClickState.targetId === id && (now - trashRightClickState.timestamp) < 1500) {
+        // 🎯 2回目の右クリック成功！復元処理を実行
+        clearTimeout(trashRightClickState.timer);
+        trashRightClickState.targetId = null;
+        trashRightClickState.timestamp = 0;
+
+        if (hintBadge) {
+            hintBadge.textContent = '✨ 復元中...';
+        }
+        if (itemCard) {
+            itemCard.classList.remove('waiting-second-right-click');
+            itemCard.classList.add('restoring');
+        }
+
+        setTimeout(() => {
+            restoreHistoryFromTrash(id);
+        }, 220);
+    } else {
+        // ☝️ 1回目の右クリック
+        trashRightClickState.targetId = id;
+        trashRightClickState.timestamp = now;
+
+        document.querySelectorAll('.trash-item-card').forEach(el => {
+            el.classList.remove('waiting-second-right-click');
+            const h = el.querySelector('.trash-hint-badge');
+            if (h) h.textContent = '🖱️ 2回右クリックで復元';
+        });
+
+        if (itemCard) {
+            itemCard.classList.add('waiting-second-right-click');
+        }
+        if (hintBadge) {
+            hintBadge.textContent = '⚡ もう一度右クリックで復元！';
+        }
+
+        clearTimeout(trashRightClickState.timer);
+        trashRightClickState.timer = setTimeout(() => {
+            if (itemCard) {
+                itemCard.classList.remove('waiting-second-right-click');
+            }
+            if (hintBadge) {
+                hintBadge.textContent = '🖱️ 2回右クリックで復元';
+            }
+            if (trashRightClickState.targetId === id) {
+                trashRightClickState.targetId = null;
+                trashRightClickState.timestamp = 0;
+            }
+        }, 1500);
+    }
+}
+
+/**
+ * 保持記録（ゴミ箱）から復習データを復元
+ */
+function restoreHistoryFromTrash(id) {
+    const trashList = loadTrashHistory();
+    const itemIndex = trashList.findIndex(item => item.id === id);
+    if (itemIndex === -1) {
+        showToastNotification('⚠️ 復元対象のデータが見つかりませんでした');
+        renderTrashList();
+        return;
+    }
+
+    const [itemToRestore] = trashList.splice(itemIndex, 1);
+    
+    // deletedAt を削除して元の学習記録に戻す
+    const restoredItem = { ...itemToRestore };
+    delete restoredItem.deletedAt;
+
+    // 現在の履歴データに追加（先頭に追加）
+    dummyHistory = [restoredItem, ...dummyHistory.filter(h => h.id !== restoredItem.id)];
+    saveHistory();
+    saveTrashHistory(trashList);
+
+    renderHistory();
+    renderTrashList();
+
+    showToastNotification(`✨ 学習記録「${restoredItem.title || '復習データ'}」を復元しました！`);
+}
+
+/**
+ * キーボード入力 "SAVE" 検知リスナー
+ */
+let saveKeySequence = '';
+let saveKeyTimer = null;
+
+function setupSaveKeyDetector() {
+    window.addEventListener('keydown', (e) => {
+        // ESCキーでモーダルを閉じる
+        if (e.key === 'Escape') {
+            const trashModal = document.getElementById('trash-modal');
+            if (trashModal && !trashModal.classList.contains('hidden')) {
+                closeTrashModal();
+                return;
+            }
+        }
+
+        // 入力キーの記録 (アルファベット単一文字)
+        if (e.key && e.key.length === 1) {
+            saveKeySequence += e.key.toUpperCase();
+            if (saveKeySequence.length > 10) {
+                saveKeySequence = saveKeySequence.slice(-10);
+            }
+
+            if (saveKeySequence.endsWith('SAVE')) {
+                saveKeySequence = '';
+                openTrashModal();
+            }
+
+            clearTimeout(saveKeyTimer);
+            saveKeyTimer = setTimeout(() => {
+                saveKeySequence = '';
+            }, 2500);
+        }
+    });
+
+    // 検索ボックスで "SAVE" と打ってEnterを押した場合も保持記録を開く
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && searchInput.value.trim().toUpperCase() === 'SAVE') {
+                e.preventDefault();
+                searchInput.value = '';
+                handleSearch();
+                openTrashModal();
+            }
+        });
     }
 }
 
@@ -158,19 +482,22 @@ function updateHomeSelectionToolbar() {
 }
 
 /**
- * 選択した記録を一括削除（パッと消す）
+ * 選択した記録を一括削除（3日間保持データへ移行）
  */
 function deleteSelectedHomeHistory() {
     const count = selectedHomeHistoryIds.size;
     if (count === 0) return;
 
-    if (confirm(`選択した ${count} 件の学習記録をまとめて削除しますか？\n（削除した記録は元に戻せません）`)) {
+    if (confirm(`選択した ${count} 件の学習記録を削除しますか？\n（削除された記録は3日間保持され、復元可能です）`)) {
+        const itemsToDelete = dummyHistory.filter(item => selectedHomeHistoryIds.has(item.id));
+        addToTrashHistory(itemsToDelete);
+
         dummyHistory = dummyHistory.filter(item => !selectedHomeHistoryIds.has(item.id));
         selectedHomeHistoryIds.clear();
         saveHistory();
         updateHomeSelectionToolbar();
         renderHistory();
-        showToastNotification(`🗑️ 選択した ${count} 件の学習記録を削除しました`);
+        showToastNotification(`🗑️ 選択した ${count} 件の学習記録を削除しました（3日間保持されます）`);
     }
 }
 
@@ -186,13 +513,16 @@ function getFilteredHistoryData() {
 }
 
 /**
- * 記録を1件ずつ削除する関数
+ * 記録を1件ずつ削除する関数（3日間保持データへ移行）
  */
 function deleteSingleHistoryItem(id) {
     const item = dummyHistory.find(h => h.id === id);
     const itemTitle = item ? item.title : 'この学習記録';
     
-    if (confirm(`学習記録「${itemTitle}」を削除しますか？\n（削除した記録は元に戻せません）`)) {
+    if (confirm(`学習記録「${itemTitle}」を削除しますか？\n（削除された記録は3日間保持され、復元可能です）`)) {
+        if (item) {
+            addToTrashHistory([item]);
+        }
         dummyHistory = dummyHistory.filter(h => h.id !== id);
         selectedHomeHistoryIds.delete(id);
         saveHistory();
@@ -205,7 +535,7 @@ function deleteSingleHistoryItem(id) {
             switchScreen('home');
         }
         
-        showToastNotification(`🗑️ 学習記録「${itemTitle}」を削除しました`);
+        showToastNotification(`🗑️ 学習記録「${itemTitle}」を削除しました（3日間保持されます）`);
     }
 }
 
@@ -235,10 +565,12 @@ let searchQuery = '';
 
 window.addEventListener('DOMContentLoaded', () => {
     loadHistory();
+    loadTrashHistory(); // 期限切れゴミ箱データの自動消去＆読み込み
     renderHistory();
     switchPlanTime(5); // 初期は5分プランにセット
     loadSettings();    // 設定のロード
     setupDragAndDrop(); // ドラッグ＆ドロップ機能のセットアップ
+    setupSaveKeyDetector(); // SAVEキー入力検知のセットアップ
     
     // URLのパラメータから historyId を取得して、あれば詳細画面を開く
     const urlParams = new URLSearchParams(window.location.search);
@@ -1468,13 +1800,16 @@ function finishTest() {
 }
 
 function confirmResetAllData() {
-    if (confirm('保存されているすべての学習記録を完全に削除して初期化しますか？')) {
+    if (confirm('保存されているすべての学習記録を削除して初期化しますか？\n（削除されたデータは3日間保持され、「SAVE」と入力して復元できます）')) {
+        if (dummyHistory.length > 0) {
+            addToTrashHistory(dummyHistory);
+        }
         dummyHistory = [];
         localStorage.removeItem('ai-study-history');
         localStorage.setItem('ai-study-history-v3', 'true');
         saveHistory();
         renderHistory();
-        alert('すべての学習記録を削除し、初期状態に一新しました。');
+        alert('すべての学習記録を削除し、初期状態に一新しました。\n※ 削除されたデータは3日間保持されます（キーボードで「SAVE」と打つと保持記録から復元できます）。');
         switchScreen('home');
     }
 }

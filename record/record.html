@@ -78,7 +78,36 @@
 
 
 
+    <!-- 🗑️ 削除データ保持記録モーダル（3日間保持） -->
+    <div id="trash-modal" class="modal-overlay hidden" onclick="closeTrashModal()">
+        <div class="modal-content trash-modal-content" onclick="event.stopPropagation()">
+            <div class="trash-modal-header">
+                <div>
+                    <h3 class="trash-modal-title">🗑️ 消去データの保持記録（3日間保持）</h3>
+                    <p class="trash-modal-subtitle">
+                        💡 復元したい記録を<strong>【2回右クリック】</strong>すると元の学習記録に復元されます
+                    </p>
+                </div>
+                <button class="modal-close-btn" onclick="closeTrashModal()" title="閉じる">✕</button>
+            </div>
+            
+            <div class="trash-notice-banner">
+                <span>⏳ 削除された復習データは<strong>3日間（72時間）</strong>保持され、期限が過ぎると自動消去されます。</span>
+            </div>
+
+            <div id="trash-list-container" class="trash-list-container">
+                <!-- 動的に保持アイテム一覧が生成・挿入されます -->
+            </div>
+
+            <div class="trash-modal-footer">
+                <span id="trash-item-count-label" style="font-size: 0.85rem; color: #64748b; font-weight: 600;">保持中: 0件</span>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="back-button" onclick="closeTrashModal()" style="margin: 0; padding: 8px 20px;">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="history.js"></script> </body>
 
 </html> 
-
