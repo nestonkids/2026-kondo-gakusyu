@@ -42,7 +42,7 @@
                                 </div>
                             </button>
 
-                            <button class="action-card" onclick="switchScreen('test')">
+                            <button class="action-card" onclick="handleTestMenuClick()">
                                 <span class="action-icon-styled">📝</span>
                                 <div class="action-text">
                                     <h3>テスト</h3>
@@ -199,7 +199,7 @@
             <div class="glass-card" style="max-width: 1060px; margin: 0 auto; text-align: center; padding: 40px;">
                 
                 <!-- 🔒 記録が10件未満のとき（最初はわかるくんに教えてもらおう） -->
-                <div id="test-locked-container" class="hidden">
+                <div id="test-locked-container">
                     <h2 class="screen-title" style="margin-bottom: 10px; font-size: 1.85rem;">📝 実力テスト（学習記録の準備中）</h2>
                     <p style="color: #64748b; font-size: 1.05rem; margin-bottom: 25px;">AIがあなたの苦手・得意を分析するには、まず学習記録が必要です。</p>
                     <div class="upload-zone" style="padding: 45px 35px; max-width: 860px; margin: 0 auto 25px auto; background: rgba(248, 250, 252, 0.9); border: 2px dashed #9b59b6; border-radius: 28px; gap: 18px;">
@@ -222,7 +222,7 @@
                 </div>
 
                 <!-- 🚀 記録が10件以上のとき（20問テスト開始） -->
-                <div id="test-ready-container">
+                <div id="test-ready-container" class="hidden">
                     <h2 class="screen-title" style="margin-bottom: 10px; font-size: 1.85rem;">📝 AI総合実力テスト（全20問）</h2>
                     <p style="color: #64748b; font-size: 1.05rem; margin-bottom: 25px;">あなたの学習履歴や練習問題をAIが分析し、苦手重点＋得意確認のテストを作成します！</p>
                     <div class="upload-zone" style="padding: 45px 35px; max-width: 860px; margin: 0 auto 25px auto; background: rgba(248, 250, 252, 0.85); border-radius: 28px; gap: 18px;">

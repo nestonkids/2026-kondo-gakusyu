@@ -1607,10 +1607,23 @@ function switchScreen(screenId) {
 }
 
 /**
+ * ホーム画面の「テスト」ボタンをクリックしたときのハンドラ
+ */
+function handleTestMenuClick() {
+    const count = dummyHistory ? dummyHistory.length : 0;
+    updateTestScreenState();
+    switchScreen('test');
+
+    if (count < 10) {
+        showToastNotification(`💡 最初はわかるくんに教えてもらおう！（記録: ${count} / 10件）`);
+    }
+}
+
+/**
  * テスト画面の表示状態を更新（学習記録が10件未満なら「まずはわかるくんに教えてもらおう」、10件以上ならテスト開始）
  */
 function updateTestScreenState() {
-    const count = dummyHistory.length;
+    const count = dummyHistory ? dummyHistory.length : 0;
     const lockedContainer = document.getElementById('test-locked-container');
     const readyContainer = document.getElementById('test-ready-container');
     const progressBar = document.getElementById('test-progress-bar');
@@ -1618,13 +1631,25 @@ function updateTestScreenState() {
     const readyCountLabel = document.getElementById('test-ready-record-count');
 
     if (count < 10) {
-        if (lockedContainer) lockedContainer.classList.remove('hidden');
-        if (readyContainer) readyContainer.classList.add('hidden');
+        if (lockedContainer) {
+            lockedContainer.classList.remove('hidden');
+            lockedContainer.style.display = 'block';
+        }
+        if (readyContainer) {
+            readyContainer.classList.add('hidden');
+            readyContainer.style.display = 'none';
+        }
         if (progressBar) progressBar.style.width = `${Math.min(100, Math.round((count / 10) * 100))}%`;
         if (progressText) progressText.textContent = `現在の学習記録: ${count} / 10件（あと ${10 - count} 件でテストが解放されます）`;
     } else {
-        if (lockedContainer) lockedContainer.classList.add('hidden');
-        if (readyContainer) readyContainer.classList.remove('hidden');
+        if (lockedContainer) {
+            lockedContainer.classList.add('hidden');
+            lockedContainer.style.display = 'none';
+        }
+        if (readyContainer) {
+            readyContainer.classList.remove('hidden');
+            readyContainer.style.display = 'block';
+        }
         if (readyCountLabel) readyCountLabel.textContent = `📊 蓄積された学習記録: ${count}件（AI分析準備完了）`;
     }
 }
