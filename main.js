@@ -1593,12 +1593,20 @@ function switchScreen(screenId) {
         updateTestScreenState();
     }
 
+    const targetScreenId = `${screenId}-screen`;
     const screens = document.querySelectorAll('.screen');
+
     screens.forEach(screen => {
-        if (screen.id === `${screenId}-screen`) {
-            screen.classList.add('active');
+        if (screen.id === targetScreenId) {
+            screen.classList.remove('active');
             const card = screen.querySelector('.glass-card');
-            if (card) card.scrollTop = 0;
+            if (card) {
+                card.style.animation = 'none';
+                void card.offsetWidth; // 強制リフロー（アニメーションを確実に再発火）
+                card.style.animation = '';
+                card.scrollTop = 0;
+            }
+            screen.classList.add('active');
         } else {
             screen.classList.remove('active');
         }
