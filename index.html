@@ -101,7 +101,7 @@
         </div>
 
         <div id="planner-screen" class="screen">
-            <div class="glass-card">
+            <div class="glass-card" style="max-width: 1060px; margin: 0 auto; padding: 35px 40px;">
                 <div class="planner-screen-header">
                     <h2 class="screen-title">✨ 今日の最適復習プラン（AI分析）</h2>
                     <div class="time-tabs">
@@ -134,7 +134,7 @@
                     <button class="start-plan-btn" onclick="switchScreen('review')">このプランで復習スタート ➔</button>
                 </div>
 
-                <button class="back-button" onclick="switchScreen('home')">🏠 戻る</button>
+                <button class="back-button" onclick="switchScreen('home')" style="align-self: center;">🏠 戻る</button>
             </div>
         </div>
 
@@ -196,18 +196,18 @@
         </div>
 
         <div id="test-screen" class="screen">
-            <div class="glass-card" style="max-width: 680px; margin: 0 auto; text-align: center;">
-                <h2 class="screen-title" style="margin-bottom: 8px;">📝 AI総合実力テスト（全20問）</h2>
-                <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 20px;">あなたの学習履歴や練習問題をAIが分析し、苦手重点＋得意確認のテストを作成します！</p>
-                <div class="upload-zone" style="padding: 30px 20px; background: rgba(248, 250, 252, 0.8);">
-                    <span style="font-size:3.8rem; display: block; margin-bottom: 12px;">🧠</span>
-                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #1e293b; margin-bottom: 8px;">苦手克服 70% ＋ 得意・定着確認 30%</h3>
-                    <p style="color: #475569; font-size: 0.88rem; line-height: 1.6; max-width: 480px; margin: 0 auto 20px auto;">
+            <div class="glass-card" style="max-width: 1060px; margin: 0 auto; text-align: center; padding: 40px;">
+                <h2 class="screen-title" style="margin-bottom: 10px; font-size: 1.85rem;">📝 AI総合実力テスト（全20問）</h2>
+                <p style="color: #64748b; font-size: 1.05rem; margin-bottom: 25px;">あなたの学習履歴や練習問題をAIが分析し、苦手重点＋得意確認のテストを作成します！</p>
+                <div class="upload-zone" style="padding: 45px 35px; max-width: 860px; margin: 0 auto 25px auto; background: rgba(248, 250, 252, 0.85); border-radius: 28px; gap: 18px;">
+                    <span style="font-size:4.5rem; display: block; margin-bottom: 8px;">🧠</span>
+                    <h3 style="font-size: 1.35rem; font-weight: 800; color: #1e293b; margin-bottom: 6px;">苦手克服 70% ＋ 得意・定着確認 30%</h3>
+                    <p style="color: #475569; font-size: 0.98rem; line-height: 1.7; max-width: 620px; margin: 0 auto 20px auto;">
                         これまでの学習ノートや練習問題で間違えた箇所をAIが重点的にピックアップ。得意な問題も織り交ぜて【全20問・各5点（100点満点）】の実力テストを自動生成します。
                     </p>
-                    <button class="start-plan-btn" style="width: auto; padding: 12px 35px; font-size: 1.05rem;" onclick="startTest()">🚀 20問テストを開始する</button>
+                    <button class="start-plan-btn" style="width: auto; padding: 15px 45px; font-size: 1.15rem;" onclick="startTest()">🚀 20問テストを開始する</button>
                 </div>
-                <button class="back-button" onclick="switchScreen('home')" style="margin-top: 15px;">🏠 ホームへ戻る</button>
+                <button class="back-button" onclick="switchScreen('home')" style="margin-top: 10px; align-self: center;">🏠 ホームへ戻る</button>
             </div>
         </div>
 
