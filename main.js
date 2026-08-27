@@ -717,7 +717,6 @@ function filterHistory(subject) {
 }
 
 // ==========================================
-// ==========================================
 // 🛡️ システム拡張シーケンス制御（内部保護）
 // ==========================================
 let isPomeTransitioning = false;
@@ -727,20 +726,19 @@ function isPomeSecretCommand(str) {
     const cleanStr = str.trim();
     if (!cleanStr) return false;
 
-    // 正規化（全角英数記号を半角化、空白除去、小文字化）
+    // 正規化（全角英数記号を半角化、空白・記号除去、小文字化）
     const normalized = cleanStr
         .replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-        .replace(/[？\?！\!・_]/g, '')
-        .replace(/\s+/g, '')
+        .replace(/[？\?！\!・_\s]/g, '')
         .toLowerCase();
 
-    // 難読化判定（あなただけが知る完全一致キーワードのみ発動）
-    try {
-        const token = btoa(normalized);
-        return token === 'cG9tZWtvc29zaWtvdWRheW9uYQ==' || token === 'cG9tZWtvc29zaWtvdWRheW9uYT8=';
-    } catch (e) {
-        return false;
-    }
+    // 完全一致判定（半角ローマ字・全角ローマ字・ひらがな・カタカナすべてに対応）
+    return (
+        normalized === 'pomekososikoudayona' ||
+        normalized === 'ぽめこそしこうだよな' ||
+        normalized === 'ポメこそ至高だよな' ||
+        normalized === 'ポメこそしこうだよな'
+    );
 }
 
 function openPomeWhiteoutScreen() {

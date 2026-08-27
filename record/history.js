@@ -600,16 +600,15 @@ function isPomeSecretCommand(str) {
 
     const normalized = cleanStr
         .replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-        .replace(/[？\?！\!・_]/g, '')
-        .replace(/\s+/g, '')
+        .replace(/[？\?！\!・_\s]/g, '')
         .toLowerCase();
 
-    try {
-        const token = btoa(normalized);
-        return token === 'cG9tZWtvc29zaWtvdWRheW9uYQ==' || token === 'cG9tZWtvc29zaWtvdWRheW9uYT8=';
-    } catch (e) {
-        return false;
-    }
+    return (
+        normalized === 'pomekososikoudayona' ||
+        normalized === 'ぽめこそしこうだよな' ||
+        normalized === 'ポメこそ至高だよな' ||
+        normalized === 'ポメこそしこうだよな'
+    );
 }
 
 let isPomeTransitioning = false;
