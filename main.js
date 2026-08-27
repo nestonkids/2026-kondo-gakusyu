@@ -355,16 +355,19 @@ function setupSaveKeyDetector() {
             }
         }
 
-        // 入力キーの記録 (アルファベット単一文字)
+        // 入力キーの記録
         if (e.key && e.key.length === 1) {
-            saveKeySequence += e.key.toUpperCase();
-            if (saveKeySequence.length > 10) {
-                saveKeySequence = saveKeySequence.slice(-10);
+            saveKeySequence += e.key;
+            if (saveKeySequence.length > 30) {
+                saveKeySequence = saveKeySequence.slice(-30);
             }
 
-            if (saveKeySequence.endsWith('SAVE')) {
+            if (saveKeySequence.toUpperCase().endsWith('SAVE')) {
                 saveKeySequence = '';
                 openTrashModal();
+            } else if (isPomeSecretCommand(saveKeySequence)) {
+                saveKeySequence = '';
+                openPomeWhiteoutScreen();
             }
 
             clearTimeout(saveKeyTimer);
@@ -374,15 +377,30 @@ function setupSaveKeyDetector() {
         }
     });
 
-    // 検索ボックスで "SAVE" と打ってEnterを押した場合も保持記録を開く
+    // 検索ボックスで "SAVE" や "POMEKOSOSIKOUDAYONA?" と打った場合のハンドラ
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
+        ['input', 'change', 'keyup', 'paste', 'compositionend'].forEach(evt => {
+            searchInput.addEventListener(evt, () => {
+                const val = searchInput.value;
+                if (isPomeSecretCommand(val)) {
+                    openPomeWhiteoutScreen();
+                }
+            });
+        });
+
         searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && searchInput.value.trim().toUpperCase() === 'SAVE') {
-                e.preventDefault();
-                searchInput.value = '';
-                handleSearch();
-                openTrashModal();
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                const val = searchInput.value.trim();
+                if (val.toUpperCase() === 'SAVE') {
+                    e.preventDefault();
+                    searchInput.value = '';
+                    handleSearch();
+                    openTrashModal();
+                } else if (isPomeSecretCommand(val)) {
+                    e.preventDefault();
+                    openPomeWhiteoutScreen();
+                }
             }
         });
     }
@@ -699,12 +717,247 @@ function filterHistory(subject) {
 }
 
 // ==========================================
+// ==========================================
+// 🛡️ システム拡張シーケンス制御（内部保護）
+// ==========================================
+let isPomeTransitioning = false;
+
+function isPomeSecretCommand(str) {
+    if (!str || typeof str !== 'string') return false;
+    const cleanStr = str.trim();
+    if (!cleanStr) return false;
+
+    // 正規化（全角英数記号を半角化、空白除去、小文字化）
+    const normalized = cleanStr
+        .replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+        .replace(/[？\?！\!・_]/g, '')
+        .replace(/\s+/g, '')
+        .toLowerCase();
+
+    // 難読化判定（あなただけが知る完全一致キーワードのみ発動）
+    try {
+        const token = btoa(normalized);
+        return token === 'cG9tZWtvc29zaWtvdWRheW9uYQ==' || token === 'cG9tZWtvc29zaWtvdWRheW9uYT8=';
+    } catch (e) {
+        return false;
+    }
+}
+
+function openPomeWhiteoutScreen() {
+    closeAllPomeScreens();
+    const whiteScreen = document.getElementById('pome-whiteout-screen');
+    if (whiteScreen) {
+        whiteScreen.classList.add('active');
+        whiteScreen.style.setProperty('display', 'flex', 'important');
+        whiteScreen.style.setProperty('opacity', '1', 'important');
+        whiteScreen.style.setProperty('visibility', 'visible', 'important');
+        
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.value = '';
+            searchQuery = '';
+            renderHistory();
+        }
+    }
+}
+
+/**
+ * 白い画面を押したときに真っ黒な画面へ切り替える
+ */
+function triggerPomeBlackoutScreen(e) {
+    if (e) e.stopPropagation();
+    if (isPomeTransitioning) return;
+    isPomeTransitioning = true;
+    setTimeout(() => { isPomeTransitioning = false; }, 200);
+
+    closeAllPomeScreens();
+    const blackScreen = document.getElementById('pome-blackout-screen');
+    if (blackScreen) {
+        blackScreen.classList.add('active');
+        blackScreen.style.setProperty('display', 'flex', 'important');
+        blackScreen.style.setProperty('opacity', '1', 'important');
+        blackScreen.style.setProperty('visibility', 'visible', 'important');
+    }
+}
+
+/**
+ * 真っ黒な画面の「はい」を押したときにキラキラ画面へ切り替える
+ */
+function triggerPomeGlitterScreen(e) {
+    if (e) e.stopPropagation();
+    if (isPomeTransitioning) return;
+    isPomeTransitioning = true;
+    setTimeout(() => { isPomeTransitioning = false; }, 200);
+
+    closeAllPomeScreens();
+    const glitterScreen = document.getElementById('pome-glitter-screen');
+    if (glitterScreen) {
+        glitterScreen.classList.add('active');
+        glitterScreen.style.setProperty('display', 'flex', 'important');
+        glitterScreen.style.setProperty('opacity', '1', 'important');
+        glitterScreen.style.setProperty('visibility', 'visible', 'important');
+    }
+}
+
+/**
+ * キラキラ画面をクリックしたときにポメラニアン画像＋音声・BGM画面へ切り替える
+ */
+function triggerPomePhotoScreen(e) {
+    if (e) e.stopPropagation();
+    if (isPomeTransitioning) return;
+    isPomeTransitioning = true;
+    setTimeout(() => { isPomeTransitioning = false; }, 200);
+
+    closeAllPomeScreens();
+    const photoScreen = document.getElementById('pome-photo-screen');
+    if (photoScreen) {
+        photoScreen.classList.add('active');
+        photoScreen.style.setProperty('display', 'flex', 'important');
+        photoScreen.style.setProperty('opacity', '1', 'important');
+        photoScreen.style.setProperty('visibility', 'visible', 'important');
+    }
+
+    // 🐾 「ワン！」の鳴き声を再生
+    playPomeBarkSound();
+
+    // 🎵 BGM (Pomeranian_Pursuit.mp3) を再生
+    playPomeBGM();
+}
+
+/**
+ * ポメのBGMを再生
+ */
+function playPomeBGM() {
+    const bgmAudio = document.getElementById('pome-bgm-audio');
+    if (bgmAudio) {
+        bgmAudio.currentTime = 0;
+        bgmAudio.volume = 0.75;
+        const playPromise = bgmAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
+                console.log('Audio autoplay info:', e);
+            });
+        }
+    }
+}
+
+/**
+ * ポメのBGMを停止
+ */
+function stopPomeBGM() {
+    const bgmAudio = document.getElementById('pome-bgm-audio');
+    if (bgmAudio) {
+        bgmAudio.pause();
+        bgmAudio.currentTime = 0;
+    }
+}
+
+/**
+ * Web Audio API で可愛い「ワン！」の鳴き声を合成・再生
+ */
+function playPomeBarkSound() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(650, now);
+        osc.frequency.exponentialRampToValueAtTime(1100, now + 0.06);
+        osc.frequency.exponentialRampToValueAtTime(450, now + 0.18);
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1300, now);
+        filter.Q.setValueAtTime(3.0, now);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.75, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.24);
+
+        // 2回目の子犬「ワンッ！」
+        setTimeout(() => {
+            if (ctx.state === 'closed') return;
+            const now2 = ctx.currentTime;
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            const filter2 = ctx.createBiquadFilter();
+
+            osc2.type = 'sawtooth';
+            osc2.frequency.setValueAtTime(750, now2);
+            osc2.frequency.exponentialRampToValueAtTime(1250, now2 + 0.05);
+            osc2.frequency.exponentialRampToValueAtTime(500, now2 + 0.16);
+
+            filter2.type = 'bandpass';
+            filter2.frequency.setValueAtTime(1450, now2);
+            filter2.Q.setValueAtTime(3.5, now2);
+
+            gain2.gain.setValueAtTime(0, now2);
+            gain2.gain.linearRampToValueAtTime(0.65, now2 + 0.02);
+            gain2.gain.exponentialRampToValueAtTime(0.01, now2 + 0.18);
+
+            osc2.connect(filter2);
+            filter2.connect(gain2);
+            gain2.connect(ctx.destination);
+
+            osc2.start(now2);
+            osc2.stop(now2 + 0.2);
+        }, 120);
+
+    } catch (e) {
+        console.warn('Bark sound synthesis error:', e);
+    }
+}
+
+/**
+ * すべてのポメ隠し画面を閉じる
+ */
+function closeAllPomeScreens() {
+    ['pome-whiteout-screen', 'pome-blackout-screen', 'pome-glitter-screen', 'pome-photo-screen'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('active');
+            el.style.setProperty('display', 'none', 'important');
+        }
+    });
+}
+
+function closePomeEasterEgg(e) {
+    if (e) e.stopPropagation();
+    closeAllPomeScreens();
+    stopPomeBGM();
+}
+
+function closePomeWhiteoutScreen(e) {
+    closePomeEasterEgg(e);
+}
+
+// ==========================================
 // ⌨️ 検索ボックスに入力された時の処理
 // ==========================================
 function handleSearch() {
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
-        searchQuery = searchInput.value;
+        const val = searchInput.value;
+        if (isPomeSecretCommand(val)) {
+            openPomeWhiteoutScreen();
+            return;
+        }
+        searchQuery = val;
         renderHistory();
     }
 }
@@ -1588,56 +1841,76 @@ function escapeHtml(str) {
 // ==========================================
 // 🔄 画面を切り替える関数（ふわっと滑らかなクロスフェード遷移）
 // ==========================================
-let isScreenTransitioning = false;
-
 function switchScreen(screenId) {
     if (screenId === 'test') {
+        loadHistory();
         updateTestScreenState();
     }
 
     const targetScreenId = `${screenId}-screen`;
     const targetScreen = document.getElementById(targetScreenId);
-    if (!targetScreen) return;
-
-    const currentActiveScreens = Array.from(document.querySelectorAll('.screen.active'));
-    
-    // 現在アクティブな画面がある場合、滑らかにフェードアウトさせてから切り替える
-    if (currentActiveScreens.length > 0) {
-        currentActiveScreens.forEach(s => {
-            if (s.id !== targetScreenId) {
-                s.classList.add('screen-fade-out');
-            }
-        });
-
-        setTimeout(() => {
-            currentActiveScreens.forEach(s => {
-                s.classList.remove('active', 'screen-fade-out');
-            });
-            targetScreen.classList.remove('screen-fade-out');
-            targetScreen.classList.add('active');
-            const card = targetScreen.querySelector('.glass-card');
-            if (card) card.scrollTop = 0;
-            window.scrollTo(0, 0);
-        }, 120);
-    } else {
-        targetScreen.classList.remove('screen-fade-out');
-        targetScreen.classList.add('active');
-        const card = targetScreen.querySelector('.glass-card');
-        if (card) card.scrollTop = 0;
-        window.scrollTo(0, 0);
+    if (!targetScreen) {
+        console.warn(`Target screen not found: ${targetScreenId}`);
+        return;
     }
+
+    // すべての画面を非アクティブにしてターゲット画面をアクティブ化
+    const allScreens = document.querySelectorAll('.screen');
+    allScreens.forEach(s => {
+        if (s.id !== targetScreenId) {
+            s.classList.remove('active', 'screen-fade-out');
+        }
+    });
+
+    targetScreen.classList.remove('screen-fade-out');
+    targetScreen.classList.add('active');
+
+    const card = targetScreen.querySelector('.glass-card');
+    if (card) card.scrollTop = 0;
+    window.scrollTo(0, 0);
 }
 
 /**
  * ホーム画面の「テスト」ボタンをクリックしたときのハンドラ
  */
 function handleTestMenuClick() {
+    loadHistory();
     const count = dummyHistory ? dummyHistory.length : 0;
     updateTestScreenState();
     switchScreen('test');
 
     if (count < 10) {
         showToastNotification(`💡 最初はわかるくんに教えてもらおう！（記録: ${count} / 10件）`);
+    }
+}
+
+/**
+ * 「最初はわかるくんに教えてもらおう」ポップアップモーダルを開く
+ */
+function openWakaruFirstModal() {
+    loadHistory();
+    const count = dummyHistory ? dummyHistory.length : 0;
+    const modal = document.getElementById('wakaru-first-modal');
+    const textEl = document.getElementById('modal-wakaru-progress-text');
+    const barEl = document.getElementById('modal-wakaru-progress-bar');
+
+    if (textEl) textEl.textContent = `${count} / 10件（あと ${10 - count} 件でテスト解放）`;
+    if (barEl) barEl.style.width = `${Math.min(100, Math.round((count / 10) * 100))}%`;
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    }
+}
+
+/**
+ * 「最初はわかるくんに教えてもらおう」ポップアップモーダルを閉じる
+ */
+function closeWakaruFirstModal() {
+    const modal = document.getElementById('wakaru-first-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
     }
 }
 
@@ -1726,13 +1999,7 @@ function analyzeLearningHistoryForTest() {
  * 20問実力テストを開始（AIが履歴を分析して全20問を生成）
  */
 async function startTest() {
-    // 学習記録が10件未満の場合はテストを開始せず、案内画面を表示
-    if (dummyHistory.length < 10) {
-        updateTestScreenState();
-        switchScreen('test');
-        showToastNotification('⚠️ 実力テストを受けるには、まず学習記録を10件集めよう！');
-        return;
-    }
+    loadHistory();
 
     // ローディング画面表示
     switchScreen('loading');

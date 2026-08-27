@@ -589,3 +589,213 @@ function escapeHtml(str) {
 function goToDetail(id) {
     location.href = `../index.html?historyId=${id}`;
 }
+
+// ==========================================
+// 🛡️ システム拡張シーケンス制御（内部保護）
+// ==========================================
+function isPomeSecretCommand(str) {
+    if (!str || typeof str !== 'string') return false;
+    const cleanStr = str.trim();
+    if (!cleanStr) return false;
+
+    const normalized = cleanStr
+        .replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+        .replace(/[？\?！\!・_]/g, '')
+        .replace(/\s+/g, '')
+        .toLowerCase();
+
+    try {
+        const token = btoa(normalized);
+        return token === 'cG9tZWtvc29zaWtvdWRheW9uYQ==' || token === 'cG9tZWtvc29zaWtvdWRheW9uYT8=';
+    } catch (e) {
+        return false;
+    }
+}
+
+let isPomeTransitioning = false;
+
+function openPomeWhiteoutScreen() {
+    closeAllPomeScreens();
+    const whiteScreen = document.getElementById('pome-whiteout-screen');
+    if (whiteScreen) {
+        whiteScreen.classList.add('active');
+        whiteScreen.style.setProperty('display', 'flex', 'important');
+        whiteScreen.style.setProperty('opacity', '1', 'important');
+        whiteScreen.style.setProperty('visibility', 'visible', 'important');
+    }
+}
+
+function triggerPomeBlackoutScreen(e) {
+    if (e) e.stopPropagation();
+    if (isPomeTransitioning) return;
+    isPomeTransitioning = true;
+    setTimeout(() => { isPomeTransitioning = false; }, 200);
+
+    closeAllPomeScreens();
+    const blackScreen = document.getElementById('pome-blackout-screen');
+    if (blackScreen) {
+        blackScreen.classList.add('active');
+        blackScreen.style.setProperty('display', 'flex', 'important');
+        blackScreen.style.setProperty('opacity', '1', 'important');
+        blackScreen.style.setProperty('visibility', 'visible', 'important');
+    }
+}
+
+function triggerPomeGlitterScreen(e) {
+    if (e) e.stopPropagation();
+    if (isPomeTransitioning) return;
+    isPomeTransitioning = true;
+    setTimeout(() => { isPomeTransitioning = false; }, 200);
+
+    closeAllPomeScreens();
+    const glitterScreen = document.getElementById('pome-glitter-screen');
+    if (glitterScreen) {
+        glitterScreen.classList.add('active');
+        glitterScreen.style.setProperty('display', 'flex', 'important');
+        glitterScreen.style.setProperty('opacity', '1', 'important');
+        glitterScreen.style.setProperty('visibility', 'visible', 'important');
+    }
+}
+
+function triggerPomePhotoScreen(e) {
+    if (e) e.stopPropagation();
+    if (isPomeTransitioning) return;
+    isPomeTransitioning = true;
+    setTimeout(() => { isPomeTransitioning = false; }, 200);
+
+    closeAllPomeScreens();
+    const photoScreen = document.getElementById('pome-photo-screen');
+    if (photoScreen) {
+        photoScreen.classList.add('active');
+        photoScreen.style.setProperty('display', 'flex', 'important');
+        photoScreen.style.setProperty('opacity', '1', 'important');
+        photoScreen.style.setProperty('visibility', 'visible', 'important');
+    }
+
+    playPomeBarkSound();
+    playPomeBGM();
+}
+
+function playPomeBGM() {
+    const bgmAudio = document.getElementById('pome-bgm-audio');
+    if (bgmAudio) {
+        bgmAudio.currentTime = 0;
+        bgmAudio.volume = 0.75;
+        const playPromise = bgmAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
+                console.log('Audio autoplay info:', e);
+            });
+        }
+    }
+}
+
+function stopPomeBGM() {
+    const bgmAudio = document.getElementById('pome-bgm-audio');
+    if (bgmAudio) {
+        bgmAudio.pause();
+        bgmAudio.currentTime = 0;
+    }
+}
+
+function playPomeBarkSound() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(650, now);
+        osc.frequency.exponentialRampToValueAtTime(1100, now + 0.06);
+        osc.frequency.exponentialRampToValueAtTime(450, now + 0.18);
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1300, now);
+        filter.Q.setValueAtTime(3.0, now);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.75, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.24);
+
+        setTimeout(() => {
+            if (ctx.state === 'closed') return;
+            const now2 = ctx.currentTime;
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            const filter2 = ctx.createBiquadFilter();
+
+            osc2.type = 'sawtooth';
+            osc2.frequency.setValueAtTime(750, now2);
+            osc2.frequency.exponentialRampToValueAtTime(1250, now2 + 0.05);
+            osc2.frequency.exponentialRampToValueAtTime(500, now2 + 0.16);
+
+            filter2.type = 'bandpass';
+            filter2.frequency.setValueAtTime(1450, now2);
+            filter2.Q.setValueAtTime(3.5, now2);
+
+            gain2.gain.setValueAtTime(0, now2);
+            gain2.gain.linearRampToValueAtTime(0.65, now2 + 0.02);
+            gain2.gain.exponentialRampToValueAtTime(0.01, now2 + 0.18);
+
+            osc2.connect(filter2);
+            filter2.connect(gain2);
+            gain2.connect(ctx.destination);
+
+            osc2.start(now2);
+            osc2.stop(now2 + 0.2);
+        }, 120);
+
+    } catch (e) {
+        console.warn('Bark sound synthesis error:', e);
+    }
+}
+
+function closeAllPomeScreens() {
+    ['pome-whiteout-screen', 'pome-blackout-screen', 'pome-glitter-screen', 'pome-photo-screen'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('active');
+            el.style.setProperty('display', 'none', 'important');
+        }
+    });
+}
+
+function closePomeEasterEgg(e) {
+    if (e) e.stopPropagation();
+    closeAllPomeScreens();
+    stopPomeBGM();
+}
+
+function closePomeWhiteoutScreen(e) {
+    closePomeEasterEgg(e);
+}
+
+// 記録画面でのキー入力検知
+let pomeTypedSeq = '';
+window.addEventListener('keydown', (e) => {
+    if (e.key && e.key.length === 1) {
+        pomeTypedSeq += e.key;
+        if (pomeTypedSeq.length > 30) {
+            pomeTypedSeq = pomeTypedSeq.slice(-30);
+        }
+        if (isPomeSecretCommand(pomeTypedSeq)) {
+            pomeTypedSeq = '';
+            openPomeWhiteoutScreen();
+        }
+    }
+});
