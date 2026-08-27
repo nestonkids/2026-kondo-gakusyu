@@ -197,17 +197,47 @@
 
         <div id="test-screen" class="screen">
             <div class="glass-card" style="max-width: 1060px; margin: 0 auto; text-align: center; padding: 40px;">
-                <h2 class="screen-title" style="margin-bottom: 10px; font-size: 1.85rem;">📝 AI総合実力テスト（全20問）</h2>
-                <p style="color: #64748b; font-size: 1.05rem; margin-bottom: 25px;">あなたの学習履歴や練習問題をAIが分析し、苦手重点＋得意確認のテストを作成します！</p>
-                <div class="upload-zone" style="padding: 45px 35px; max-width: 860px; margin: 0 auto 25px auto; background: rgba(248, 250, 252, 0.85); border-radius: 28px; gap: 18px;">
-                    <span style="font-size:4.5rem; display: block; margin-bottom: 8px;">🧠</span>
-                    <h3 style="font-size: 1.35rem; font-weight: 800; color: #1e293b; margin-bottom: 6px;">苦手克服 70% ＋ 得意・定着確認 30%</h3>
-                    <p style="color: #475569; font-size: 0.98rem; line-height: 1.7; max-width: 620px; margin: 0 auto 20px auto;">
-                        これまでの学習ノートや練習問題で間違えた箇所をAIが重点的にピックアップ。得意な問題も織り交ぜて【全20問・各5点（100点満点）】の実力テストを自動生成します。
-                    </p>
-                    <button class="start-plan-btn" style="width: auto; padding: 15px 45px; font-size: 1.15rem;" onclick="startTest()">🚀 20問テストを開始する</button>
+                
+                <!-- 🔒 記録が10件未満のとき（最初はわかるくんに教えてもらおう） -->
+                <div id="test-locked-container" class="hidden">
+                    <h2 class="screen-title" style="margin-bottom: 10px; font-size: 1.85rem;">📝 実力テスト（学習記録の準備中）</h2>
+                    <p style="color: #64748b; font-size: 1.05rem; margin-bottom: 25px;">AIがあなたの苦手・得意を分析するには、まず学習記録が必要です。</p>
+                    <div class="upload-zone" style="padding: 45px 35px; max-width: 860px; margin: 0 auto 25px auto; background: rgba(248, 250, 252, 0.9); border: 2px dashed #9b59b6; border-radius: 28px; gap: 18px;">
+                        <span style="font-size:4.5rem; display: block; margin-bottom: 8px;">🤖</span>
+                        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--accent-purple); margin-bottom: 6px;">最初はわかるくんに教えてもらおう！</h3>
+                        <p style="color: #475569; font-size: 1.02rem; line-height: 1.7; max-width: 650px; margin: 0 auto 15px auto;">
+                            実力テストは、あなたが学習したノートや練習問題の記録をもとにAIがパーソナライズして作成します。<br>
+                            まずは<strong>「わかるくんに教えてもらう」</strong>でノートの写真を読み込んで、学習記録を<strong>10件</strong>作ってみよう！
+                        </p>
+                        
+                        <!-- 進捗メーター -->
+                        <div style="width: 100%; max-width: 480px; margin: 0 auto 10px auto; background: #e2e8f0; border-radius: 999px; height: 16px; overflow: hidden; position: relative;">
+                            <div id="test-progress-bar" style="background: linear-gradient(135deg, #9b59b6, #3498db); height: 100%; width: 0%; border-radius: 999px; transition: width 0.4s ease;"></div>
+                        </div>
+                        <span id="test-progress-text" style="font-size: 0.95rem; font-weight: 700; color: #64748b; margin-bottom: 15px;">現在の学習記録: 0 / 10件（あと10件必要です）</span>
+
+                        <button class="start-plan-btn" style="width: auto; padding: 15px 45px; font-size: 1.15rem; background: linear-gradient(135deg, #3498db, #2980b9); box-shadow: 0 6px 18px rgba(52, 152, 219, 0.35);" onclick="switchScreen('review')">📚 わかるくんに教えてもらう ➔</button>
+                    </div>
+                    <button class="back-button" onclick="switchScreen('home')" style="margin-top: 10px; align-self: center;">🏠 ホームへ戻る</button>
                 </div>
-                <button class="back-button" onclick="switchScreen('home')" style="margin-top: 10px; align-self: center;">🏠 ホームへ戻る</button>
+
+                <!-- 🚀 記録が10件以上のとき（20問テスト開始） -->
+                <div id="test-ready-container">
+                    <h2 class="screen-title" style="margin-bottom: 10px; font-size: 1.85rem;">📝 AI総合実力テスト（全20問）</h2>
+                    <p style="color: #64748b; font-size: 1.05rem; margin-bottom: 25px;">あなたの学習履歴や練習問題をAIが分析し、苦手重点＋得意確認のテストを作成します！</p>
+                    <div class="upload-zone" style="padding: 45px 35px; max-width: 860px; margin: 0 auto 25px auto; background: rgba(248, 250, 252, 0.85); border-radius: 28px; gap: 18px;">
+                        <span style="font-size:4.5rem; display: block; margin-bottom: 8px;">🧠</span>
+                        <h3 style="font-size: 1.35rem; font-weight: 800; color: #1e293b; margin-bottom: 6px;">苦手克服 70% ＋ 得意・定着確認 30%</h3>
+                        <p style="color: #475569; font-size: 0.98rem; line-height: 1.7; max-width: 620px; margin: 0 auto 15px auto;">
+                            これまでの学習ノートや練習問題で間違えた箇所をAIが重点的にピックアップ。得意な問題も織り交ぜて【全20問・各5点（100点満点）】の実力テストを自動生成します。
+                        </p>
+                        <span id="test-ready-record-count" style="display: inline-block; background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.88rem; padding: 4px 14px; border-radius: 20px; margin-bottom: 15px;">📊 蓄積された学習記録: 10件以上</span>
+                        <br>
+                        <button class="start-plan-btn" style="width: auto; padding: 15px 45px; font-size: 1.15rem;" onclick="startTest()">🚀 20問テストを開始する</button>
+                    </div>
+                    <button class="back-button" onclick="switchScreen('home')" style="margin-top: 10px; align-self: center;">🏠 ホームへ戻る</button>
+                </div>
+
             </div>
         </div>
 

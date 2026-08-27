@@ -1589,6 +1589,10 @@ function escapeHtml(str) {
 // 🔄 画面を切り替える関数
 // ==========================================
 function switchScreen(screenId) {
+    if (screenId === 'test') {
+        updateTestScreenState();
+    }
+
     const screens = document.querySelectorAll('.screen');
     screens.forEach(screen => {
         if (screen.id === `${screenId}-screen`) {
@@ -1600,6 +1604,29 @@ function switchScreen(screenId) {
         }
     });
     window.scrollTo(0, 0);
+}
+
+/**
+ * テスト画面の表示状態を更新（学習記録が10件未満なら「まずはわかるくんに教えてもらおう」、10件以上ならテスト開始）
+ */
+function updateTestScreenState() {
+    const count = dummyHistory.length;
+    const lockedContainer = document.getElementById('test-locked-container');
+    const readyContainer = document.getElementById('test-ready-container');
+    const progressBar = document.getElementById('test-progress-bar');
+    const progressText = document.getElementById('test-progress-text');
+    const readyCountLabel = document.getElementById('test-ready-record-count');
+
+    if (count < 10) {
+        if (lockedContainer) lockedContainer.classList.remove('hidden');
+        if (readyContainer) readyContainer.classList.add('hidden');
+        if (progressBar) progressBar.style.width = `${Math.min(100, Math.round((count / 10) * 100))}%`;
+        if (progressText) progressText.textContent = `現在の学習記録: ${count} / 10件（あと ${10 - count} 件でテストが解放されます）`;
+    } else {
+        if (lockedContainer) lockedContainer.classList.add('hidden');
+        if (readyContainer) readyContainer.classList.remove('hidden');
+        if (readyCountLabel) readyCountLabel.textContent = `📊 蓄積された学習記録: ${count}件（AI分析準備完了）`;
+    }
 }
 
 // ==========================================
@@ -1652,6 +1679,14 @@ function analyzeLearningHistoryForTest() {
  * 20問実力テストを開始（AIが履歴を分析して全20問を生成）
  */
 async function startTest() {
+    // 学習記録が10件未満の場合はテストを開始せず、案内画面を表示
+    if (dummyHistory.length < 10) {
+        updateTestScreenState();
+        switchScreen('test');
+        showToastNotification('⚠️ 実力テストを受けるには、まず学習記録を10件集めよう！');
+        return;
+    }
+
     // ローディング画面表示
     switchScreen('loading');
     const loadingText = document.querySelector('#loading-screen h3');
