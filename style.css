@@ -3085,4 +3085,137 @@ body {
     margin-top: 6px;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+/* ==========================================
+   ⚠️ 未終了学習データ用バッジ＆ツールチップスタイル
+========================================== */
+.unfinished-warning-badge {
+    position: absolute;
+    top: 6px;
+    left: 7px;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    z-index: 15;
+    filter: drop-shadow(0 2px 5px rgba(217, 119, 6, 0.35));
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.unfinished-warning-badge:hover {
+    transform: scale(1.22);
+}
+
+.warning-triangle-svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* 選択モード時のバッジ位置調整（チェックボックスと重ならないよう右にシフト） */
+.history-card-horizontal.in-selection-mode .unfinished-warning-badge {
+    left: 36px;
+}
+.history-item-row.in-selection-mode .unfinished-warning-badge {
+    left: 38px;
+}
+
+/* CSSツールチップ（バッジのすぐ横に表示される吹き出し） */
+.unfinished-badge-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%) translateX(6px);
+    background: rgba(15, 23, 42, 0.94);
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 9999;
+}
+.unfinished-badge-tooltip::before {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 4px;
+    border-style: solid;
+    border-color: transparent rgba(15, 23, 42, 0.94) transparent transparent;
+}
+.unfinished-warning-badge:hover .unfinished-badge-tooltip {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(-50%) translateX(9px);
+}
+
+/* 🖱️ マウス追従型グローバルツールチップ（カーソルの横に追従表示） */
+.floating-unfinished-tooltip {
+    position: fixed;
+    z-index: 100000;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.95);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 5px 11px;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
+    pointer-events: none;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(6px);
+    animation: floatingTooltipFadeIn 0.1s ease-out;
+}
+
+@keyframes floatingTooltipFadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* 未終了カードのスタイル微調整 */
+.history-card-horizontal.is-unfinished-card {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: linear-gradient(180deg, rgba(254, 243, 199, 0.2) 0%, rgba(255, 255, 255, 1) 45%);
+}
+.history-card-horizontal.is-unfinished-card:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 8px 22px rgba(245, 158, 11, 0.18);
+}
+
+.history-item-row.is-unfinished-row {
+    position: relative;
+    border-color: rgba(245, 158, 11, 0.45);
+    background: linear-gradient(90deg, rgba(254, 243, 199, 0.22) 0%, rgba(255, 255, 255, 1) 30%);
+}
+.history-item-row.is-unfinished-row:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 8px 22px rgba(245, 158, 11, 0.18);
+}
+
+.unfinished-status-tag {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #f59e0b;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }

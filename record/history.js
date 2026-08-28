@@ -7,6 +7,58 @@ let isRecordSelectionMode = false;
 let selectedRecordHistoryIds = new Set();
 
 // ==========================================
+// ⚠️ 未終了データ用バッジ＆ツールチップユーティリティ
+// ==========================================
+let unfinishedTooltipEl = null;
+
+function showUnfinishedTooltip(event) {
+    if (!unfinishedTooltipEl) {
+        unfinishedTooltipEl = document.createElement('div');
+        unfinishedTooltipEl.className = 'floating-unfinished-tooltip';
+        unfinishedTooltipEl.innerHTML = '<span style="color:#fbbf24; font-size:0.9rem;">⚠️</span> 未終了';
+        document.body.appendChild(unfinishedTooltipEl);
+    }
+    unfinishedTooltipEl.style.display = 'flex';
+    moveUnfinishedTooltip(event);
+}
+
+function moveUnfinishedTooltip(event) {
+    if (!unfinishedTooltipEl) return;
+    const offsetLeft = 14;
+    const offsetTop = 12;
+    let x = event.clientX + offsetLeft;
+    let y = event.clientY + offsetTop;
+    
+    if (x + 85 > window.innerWidth) {
+        x = event.clientX - 85;
+    }
+    if (y + 35 > window.innerHeight) {
+        y = event.clientY - 35;
+    }
+    unfinishedTooltipEl.style.left = `${x}px`;
+    unfinishedTooltipEl.style.top = `${y}px`;
+}
+
+function hideUnfinishedTooltip() {
+    if (unfinishedTooltipEl) {
+        unfinishedTooltipEl.style.display = 'none';
+    }
+}
+
+function getUnfinishedBadgeHtml() {
+    return `
+        <div class="unfinished-warning-badge" data-tooltip="未終了" title="未終了" onmouseenter="showUnfinishedTooltip(event)" onmousemove="moveUnfinishedTooltip(event)" onmouseleave="hideUnfinishedTooltip()" onclick="event.stopPropagation();">
+            <svg class="warning-triangle-svg" viewBox="0 0 24 24" width="22" height="22" aria-label="未終了">
+                <path d="M12 2.2L1.2 21H22.8L12 2.2Z" fill="#FBBF24" stroke="#D97706" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M12 8.5V14" stroke="#1E293B" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="12" cy="17.5" r="1.3" fill="#1E293B"/>
+            </svg>
+            <span class="unfinished-badge-tooltip">未終了</span>
+        </div>
+    `;
+}
+
+// ==========================================
 // 🗑️ 削除データ保持管理（3日間保持 / 2回右クリック復元 / SAVE入力検知）
 // ==========================================
 const TRASH_STORAGE_KEY = 'ai-study-trash';
@@ -159,12 +211,16 @@ function renderTrashList() {
         const deletedDateStr = item.deletedAt ? new Date(item.deletedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
         const remainingStr = formatTrashRemainingTime(item.deletedAt);
 
+        const isUnfinished = !!item.isUnfinished;
+        const unfinishedTagHtml = isUnfinished ? '<span class="unfinished-status-tag" style="padding: 1px 6px; font-size: 0.72rem; margin-left: 4px;">⚠️ 未終了</span>' : '';
+
         card.innerHTML = `
             <div class="trash-item-left">
                 <div class="trash-item-icon">${itemIcon}</div>
                 <div class="trash-item-info">
                     <div class="trash-item-meta">
                         <span class="trash-item-subject">${escapeHtml(itemSubject)}</span>
+                        ${unfinishedTagHtml}
                         <span>📅 学習日: ${escapeHtml(itemDate)}</span>
                         ${deletedDateStr ? `<span>🗑️ 削除: ${escapeHtml(deletedDateStr)}</span>` : ''}
                     </div>
@@ -487,8 +543,10 @@ function renderHistoryList() {
         studyHistory.forEach(item => {
             const card = document.createElement('div');
             const isSelected = selectedRecordHistoryIds.has(item.id);
+            const isUnfinished = !!item.isUnfinished;
+            const unfinishedBadgeHtml = isUnfinished ? getUnfinishedBadgeHtml() : '';
 
-            card.className = `history-item-row ${isSelected ? 'selected-for-delete' : ''}`;
+            card.className = `history-item-row ${isSelected ? 'selected-for-delete' : ''} ${isUnfinished ? 'is-unfinished-row' : ''} ${isRecordSelectionMode ? 'in-selection-mode' : ''}`;
             card.style.cursor = 'pointer';
             
             // 最新のやり取りを取得してプレビュー表示
@@ -509,6 +567,7 @@ function renderHistoryList() {
                 card.setAttribute('onclick', `toggleSelectRecordItem('${item.id}')`);
                 card.innerHTML = `
                     <div class="row-select-checkbox">${isSelected ? '✓' : ''}</div>
+                    ${unfinishedBadgeHtml}
                     <div class="row-icon">${itemIcon}</div>
                     <div class="row-info">
                         <span class="row-date">📅 ${escapeHtml(itemDate)} [${escapeHtml(itemSubject)}]</span>
@@ -519,6 +578,7 @@ function renderHistoryList() {
             } else {
                 card.setAttribute('onclick', `goToDetail('${item.id}')`);
                 card.innerHTML = `
+                    ${unfinishedBadgeHtml}
                     <div class="row-icon">${itemIcon}</div>
                     <div class="row-info">
                         <span class="row-date">📅 ${escapeHtml(itemDate)} [${escapeHtml(itemSubject)}]</span>

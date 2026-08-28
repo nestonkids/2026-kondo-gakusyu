@@ -6,6 +6,58 @@ const defaultHistory = [];
 let dummyHistory = [];
 
 // ==========================================
+// ⚠️ 未終了データ用バッジ＆ツールチップユーティリティ
+// ==========================================
+let unfinishedTooltipEl = null;
+
+function showUnfinishedTooltip(event) {
+    if (!unfinishedTooltipEl) {
+        unfinishedTooltipEl = document.createElement('div');
+        unfinishedTooltipEl.className = 'floating-unfinished-tooltip';
+        unfinishedTooltipEl.innerHTML = '<span style="color:#fbbf24; font-size:0.9rem;">⚠️</span> 未終了';
+        document.body.appendChild(unfinishedTooltipEl);
+    }
+    unfinishedTooltipEl.style.display = 'flex';
+    moveUnfinishedTooltip(event);
+}
+
+function moveUnfinishedTooltip(event) {
+    if (!unfinishedTooltipEl) return;
+    const offsetLeft = 14;
+    const offsetTop = 12;
+    let x = event.clientX + offsetLeft;
+    let y = event.clientY + offsetTop;
+    
+    if (x + 85 > window.innerWidth) {
+        x = event.clientX - 85;
+    }
+    if (y + 35 > window.innerHeight) {
+        y = event.clientY - 35;
+    }
+    unfinishedTooltipEl.style.left = `${x}px`;
+    unfinishedTooltipEl.style.top = `${y}px`;
+}
+
+function hideUnfinishedTooltip() {
+    if (unfinishedTooltipEl) {
+        unfinishedTooltipEl.style.display = 'none';
+    }
+}
+
+function getUnfinishedBadgeHtml() {
+    return `
+        <div class="unfinished-warning-badge" data-tooltip="未終了" title="未終了" onmouseenter="showUnfinishedTooltip(event)" onmousemove="moveUnfinishedTooltip(event)" onmouseleave="hideUnfinishedTooltip()" onclick="event.stopPropagation();">
+            <svg class="warning-triangle-svg" viewBox="0 0 24 24" width="22" height="22" aria-label="未終了">
+                <path d="M12 2.2L1.2 21H22.8L12 2.2Z" fill="#FBBF24" stroke="#D97706" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M12 8.5V14" stroke="#1E293B" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="12" cy="17.5" r="1.3" fill="#1E293B"/>
+            </svg>
+            <span class="unfinished-badge-tooltip">未終了</span>
+        </div>
+    `;
+}
+
+// ==========================================
 // 💾 ローカルストレージ連携
 // ==========================================
 function isSampleItem(item) {
@@ -214,12 +266,16 @@ function renderTrashList() {
         const deletedDateStr = item.deletedAt ? new Date(item.deletedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
         const remainingStr = formatTrashRemainingTime(item.deletedAt);
 
+        const isUnfinished = !!item.isUnfinished;
+        const unfinishedTagHtml = isUnfinished ? '<span class="unfinished-status-tag" style="padding: 1px 6px; font-size: 0.72rem; margin-left: 4px;">⚠️ 未終了</span>' : '';
+
         card.innerHTML = `
             <div class="trash-item-left">
                 <div class="trash-item-icon">${itemIcon}</div>
                 <div class="trash-item-info">
                     <div class="trash-item-meta">
                         <span class="trash-item-subject">${escapeHtml(itemSubject)}</span>
+                        ${unfinishedTagHtml}
                         <span>📅 学習日: ${escapeHtml(itemDate)}</span>
                         ${deletedDateStr ? `<span>🗑️ 削除: ${escapeHtml(deletedDateStr)}</span>` : ''}
                     </div>
@@ -648,13 +704,16 @@ function renderHistory() {
         filteredData.forEach(item => {
             const card = document.createElement('div');
             const isSelected = selectedHomeHistoryIds.has(item.id);
+            const isUnfinished = !!item.isUnfinished;
+            const unfinishedBadgeHtml = isUnfinished ? getUnfinishedBadgeHtml() : '';
             
-            card.className = `history-card-horizontal ${isHomeSelectionMode ? 'in-selection-mode' : ''} ${isSelected ? 'selected-for-delete' : ''}`;
+            card.className = `history-card-horizontal ${isHomeSelectionMode ? 'in-selection-mode' : ''} ${isSelected ? 'selected-for-delete' : ''} ${isUnfinished ? 'is-unfinished-card' : ''}`;
             
             if (isHomeSelectionMode) {
                 card.setAttribute('onclick', `toggleSelectHomeHistoryItem('${item.id}')`);
                 card.innerHTML = `
                     <div class="card-select-checkbox">${isSelected ? '✓' : ''}</div>
+                    ${unfinishedBadgeHtml}
                     <div class="card-icon">${item.icon || '📚'}</div>
                     <div class="card-info">
                         <span class="history-date">📅 ${escapeHtml(item.date || '')}</span>
@@ -665,6 +724,7 @@ function renderHistory() {
                 card.setAttribute('onclick', `openHistoryChat('${item.id}')`);
                 card.innerHTML = `
                     <button class="delete-item-btn" onclick="event.stopPropagation(); deleteSingleHistoryItem('${item.id}')" title="この記録を削除">✕</button>
+                    ${unfinishedBadgeHtml}
                     <div class="card-icon">${item.icon || '📚'}</div>
                     <div class="card-info">
                         <span class="history-date">📅 ${escapeHtml(item.date || '')}</span>
@@ -975,24 +1035,131 @@ function clearFileSelect() {
 }
 
 // ==========================================
-// 🚀 復習を開始する関数
+// 🔄 「わかるくんに教えてもらう」アクティブセッション自動同期管理
 // ==========================================
+let currentReviewSessionId = null;
 let currentSessionTopic = { title: '', subject: '数学' };
 
+function getSubjectIcon(subject, hasPractice = false) {
+    if (hasPractice) return '🎯';
+    if (subject === '数学') return '📐';
+    if (subject === '理科') return '🧪';
+    if (subject === '英語') return '🔤';
+    if (subject === '社会') return '🏛️';
+    if (subject === '国語') return '📖';
+    return '📚';
+}
+
+/**
+ * 画面上の最新DOM（チャットログや練習状態など）から現在の復習セッションを抽出・同期保存
+ * @param {boolean} isFinalSave - ユーザーが明示的に完了保存（ボタン押下）したかどうか
+ */
+function syncCurrentReviewSessionFromDOM(isFinalSave = false) {
+    if (!currentReviewSessionId) return null;
+    
+    let item = dummyHistory.find(h => h.id === currentReviewSessionId);
+    if (!item) return null;
+
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const dateString = `${yyyy}/${mm}/${dd}`;
+    item.date = dateString;
+
+    // 1. チャットログの抽出
+    const chatLogEl = document.getElementById('ai-chat-log');
+    const chatHistory = [];
+    if (chatLogEl) {
+        const messages = chatLogEl.querySelectorAll('.chat-message');
+        messages.forEach(msg => {
+            if (msg.classList.contains('loading-indicator')) return;
+            const sender = msg.classList.contains('ai') ? 'ai' : 'user';
+            const contentEl = msg.querySelector('.markdown-body, div, p');
+            const text = contentEl ? contentEl.innerHTML : (msg.innerText || '');
+            if (text && text.trim()) {
+                chatHistory.push({ sender, text });
+            }
+        });
+    }
+    if (chatHistory.length > 0) {
+        item.chat = chatHistory;
+    }
+
+    // 2. 練習問題情報
+    const scoreVal = document.getElementById('practice-score-val');
+    const scoreDisp = document.getElementById('practice-score-display');
+    let hasPractice = false;
+    let practiceScoreStr = '';
+    
+    if (currentPracticeQuestions && currentPracticeQuestions.length > 0 && scoreDisp && !scoreDisp.classList.contains('hidden')) {
+        hasPractice = true;
+        practiceScoreStr = scoreVal ? scoreVal.textContent : '0';
+        
+        const hasPracticeLogInChat = item.chat && item.chat.some(c => c.text && c.text.includes('ピンポイント練習問題'));
+        if (!hasPracticeLogInChat && isFinalSave) {
+            let practiceLog = `🎯 <strong>ピンポイント練習問題（5問）結果: ${practiceScoreStr} / 100 点</strong><br><br>`;
+            currentPracticeQuestions.forEach((q, idx) => {
+                practiceLog += `<strong>【問${idx + 1}】 ${escapeHtml(q.title)}</strong><br>・正解: ${escapeHtml(q.answer)}<br>・解説: ${escapeHtml(q.explanation)}<br><br>`;
+            });
+            if (typeof lastWakaruAdvice !== 'undefined' && lastWakaruAdvice) {
+                practiceLog += `💡 <strong>わかるくんからのアドバイス:</strong><br>${convertMarkdownToHtml(lastWakaruAdvice)}`;
+            }
+            item.chat.push({ sender: 'ai', text: practiceLog });
+        }
+    }
+
+    // 3. タイトルと教科、アイコン
+    let baseTitle = (currentSessionTopic && currentSessionTopic.title) ? currentSessionTopic.title : (item.title && !item.title.includes('作成中') ? item.title : 'ノート解説授業');
+    let subject = (currentSessionTopic && currentSessionTopic.subject) ? currentSessionTopic.subject : (item.subject || '数学');
+
+    item.subject = subject;
+
+    if (isFinalSave) {
+        if (hasPractice) {
+            item.title = `${baseTitle} ＆ 練習問題 (${practiceScoreStr}点)`;
+        } else if (item.chat && item.chat.length > 2) {
+            item.title = `${baseTitle}（質疑応答つき）`;
+        } else {
+            item.title = baseTitle;
+        }
+        item.isUnfinished = false; // ★ 正常完了時は false
+    } else {
+        item.title = baseTitle;
+        item.isUnfinished = true; // ★ 途中中断時は true
+    }
+
+    item.icon = getSubjectIcon(subject, hasPractice);
+
+    // 画像がまだセットされていなければセット
+    const teachingPreview = document.getElementById('teaching-image-preview');
+    if (!item.image && teachingPreview && teachingPreview.src && teachingPreview.src.startsWith('data:')) {
+        compressImage(teachingPreview.src, 400, 400, 0.6, (compressedThumb) => {
+            item.image = compressedThumb;
+            saveHistory();
+        });
+    }
+
+    saveHistory();
+    renderHistory();
+    return item;
+}
+
+// ==========================================
+// 🚀 復習を開始する関数
+// ==========================================
 function startReviewProcess() {
     // セッショントピックのリセット
-    currentSessionTopic = { title: '', subject: '数学' };
+    currentSessionTopic = { title: 'ノート解説授業', subject: '数学' };
 
-    // ローディング画面に切り替え
-    switchScreen('loading');
-    renderAIPersonaBanners();
-    
     const imagePreview = document.getElementById('image-preview');
     const teachingPreview = document.getElementById('teaching-image-preview');
     const aiTopBanner = document.getElementById('ai-top-image-banner');
     
     // プレビュー画像を解説画面の一番上に引き継ぐ
+    let initialImage = null;
     if (imagePreview && imagePreview.src && imagePreview.src.startsWith('data:')) {
+        initialImage = imagePreview.src;
         if (teachingPreview) teachingPreview.src = imagePreview.src;
         if (aiTopBanner) {
             aiTopBanner.classList.remove('hidden');
@@ -1005,11 +1172,48 @@ function startReviewProcess() {
         }
     }
     
+    // ★ 新しいセッションIDを発行し、開始直後から即座に「未終了」として履歴に保存
+    currentReviewSessionId = 'h_session_' + Date.now();
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const dateString = `${yyyy}/${mm}/${dd}`;
+
+    const newSession = {
+        id: currentReviewSessionId,
+        date: dateString,
+        subject: '数学',
+        title: 'ノート解説授業',
+        icon: '📚',
+        image: null,
+        chat: [],
+        isUnfinished: true, // ★ 開始時点から未終了フラグON
+        createdAt: Date.now()
+    };
+    dummyHistory.unshift(newSession);
+    saveHistory();
+    renderHistory();
+
+    if (initialImage) {
+        compressImage(initialImage, 400, 400, 0.6, (compressedThumb) => {
+            const item = dummyHistory.find(h => h.id === currentReviewSessionId);
+            if (item) {
+                item.image = compressedThumb;
+                saveHistory();
+            }
+        });
+    }
+
     // フォームのリセット
     const chatInput = document.getElementById('chat-question-input');
     if (chatInput) chatInput.value = '';
     
     const chatLog = document.getElementById('ai-chat-log');
+    
+    // ローディング画面に切り替え
+    switchScreen('loading');
+    renderAIPersonaBanners();
     
     const apiKey = getCleanApiKey();
 
@@ -1105,6 +1309,18 @@ ${aiProfilePrompt}
                     </div>
                 `;
             }
+
+            // セッション更新
+            const item = dummyHistory.find(h => h.id === currentReviewSessionId);
+            if (item) {
+                item.title = title || 'ノート解説授業';
+                item.subject = subject || '数学';
+                item.icon = getSubjectIcon(subject);
+                item.chat = [{ sender: 'ai', text: convertMarkdownToHtml(cleanText) }];
+                saveHistory();
+                renderHistory();
+            }
+
             switchScreen('ai-response');
         }).catch(async (err) => {
             console.warn('First attempt with image failed:', err);
@@ -1133,6 +1349,17 @@ ${aiProfilePrompt}
                             </div>
                         `;
                     }
+
+                    const item = dummyHistory.find(h => h.id === currentReviewSessionId);
+                    if (item) {
+                        item.title = title || 'ノート解説授業';
+                        item.subject = subject || '数学';
+                        item.icon = getSubjectIcon(subject);
+                        item.chat = [{ sender: 'ai', text: convertMarkdownToHtml(cleanText) }];
+                        saveHistory();
+                        renderHistory();
+                    }
+
                     switchScreen('ai-response');
                     return;
                 } catch (err2) {
@@ -1161,25 +1388,36 @@ ${aiProfilePrompt}
     } else {
         // APIキーが未入力の場合はモック演出
         setTimeout(() => {
+            const mockText = `<h3>📖 ノートの内容を解説するよ！</h3>
+<p>アップロードされたノートの内容を確認したよ！ポイントを整理して教えるね。</p>
+
+<h4>【重要ポイント・解法のコツ】</h4>
+<ul>
+    <li><strong>直線の交点と式：</strong> 直線 <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">l, m</span> の交点座標を連立方程式で求めるのが最初のステップだよ。</li>
+    <li><strong>三角形の面積二等分：</strong> 頂点を通る直線で三角形の面積を2等分するときは、向かい合う辺の<strong>中点</strong>を通る直線の方程式を求めよう！</li>
+    <li><strong>公式の確認：</strong> 底辺を <span class="math-fallback-inline" style="font-style:italic;">b</span>、高さを <span class="math-fallback-inline" style="font-style:italic;">h</span> とすると、面積は <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">S = ½bh</span> で計算できるね。</li>
+</ul>
+
+<p style="margin-top: 14px; font-weight: bold; color: var(--accent-purple);">💬 直線 <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">l</span> や <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">m</span> の式で、分からないところや質問はあるかな？</p>`;
+
             if (chatLog) {
                 chatLog.innerHTML = `
                     <div class="chat-message ai" style="display: flex; gap: 8px; align-self: flex-start;">
                         <span style="font-size: 1.2rem;">🤖</span>
                         <div class="markdown-body" style="line-height: 1.75; font-size: 0.94rem;">
-                            <h3>📖 ノートの内容を解説するよ！</h3>
-                            <p>アップロードされたノートの内容を確認したよ！ポイントを整理して教えるね。</p>
-                            
-                            <h4>【重要ポイント・解法のコツ】</h4>
-                            <ul>
-                                <li><strong>直線の交点と式：</strong> 直線 <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">l, m</span> の交点座標を連立方程式で求めるのが最初のステップだよ。</li>
-                                <li><strong>三角形の面積二等分：</strong> 頂点を通る直線で三角形の面積を2等分するときは、向かい合う辺の<strong>中点</strong>を通る直線の方程式を求めよう！</li>
-                                <li><strong>公式の確認：</strong> 底辺を <span class="math-fallback-inline" style="font-style:italic;">b</span>、高さを <span class="math-fallback-inline" style="font-style:italic;">h</span> とすると、面積は <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">S = ½bh</span> で計算できるね。</li>
-                            </ul>
-
-                            <p style="margin-top: 14px; font-weight: bold; color: var(--accent-purple);">💬 直線 <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">l</span> や <span class="math-fallback-inline" style="font-style:italic; font-weight:600;">m</span> の式で、分からないところや質問はあるかな？</p>
+                            ${mockText}
                         </div>
                     </div>
                 `;
+            }
+            const item = dummyHistory.find(h => h.id === currentReviewSessionId);
+            if (item) {
+                item.title = '直線の交点と三角形の面積';
+                item.subject = '数学';
+                item.icon = '📐';
+                item.chat = [{ sender: 'ai', text: mockText }];
+                saveHistory();
+                renderHistory();
             }
             switchScreen('ai-response');
         }, 2000);
@@ -1316,6 +1554,9 @@ function sendChatQuestion() {
     
     // スクロールを一番下に
     chatLog.scrollTop = chatLog.scrollHeight;
+
+    // ★ ユーザーの発言をセッションに即時同期保存（未終了のまま）
+    syncCurrentReviewSessionFromDOM(false);
     
     const apiKey = localStorage.getItem('gemini-api-key');
     if (apiKey) {
@@ -1415,6 +1656,9 @@ ${aiProfilePrompt}
             `;
             chatLog.appendChild(aiMsg);
             chatLog.scrollTop = chatLog.scrollHeight;
+
+            // ★ AI応答をセッションに即時同期保存
+            syncCurrentReviewSessionFromDOM(false);
         }).catch((err) => {
             loadingMsg.remove();
             console.error(err);
@@ -1427,6 +1671,7 @@ ${aiProfilePrompt}
             `;
             chatLog.appendChild(errorMsg);
             chatLog.scrollTop = chatLog.scrollHeight;
+            syncCurrentReviewSessionFromDOM(false);
         });
     } else {
         // APIキーがない場合のモック動作（1秒ディレイ）
@@ -1450,6 +1695,9 @@ ${aiProfilePrompt}
             `;
             chatLog.appendChild(aiMsg);
             chatLog.scrollTop = chatLog.scrollHeight;
+
+            // ★ モック応答をセッションに即時同期保存
+            syncCurrentReviewSessionFromDOM(false);
         }, 800);
     }
 }
@@ -1461,117 +1709,30 @@ function handleChatKeyPress(event) {
 }
 
 // ==========================================
-// 💾 「わかるくん」の授業＆練習結果を統一学習記録として保存
+// 💾 「わかるくん」の授業＆練習結果を統一学習記録として保存（正常完了）
 // ==========================================
 function saveWakaruSessionAndReturnHome() {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const dateString = `${yyyy}/${mm}/${dd}`;
-    
-    // 1. チャットログのメッセージをすべて取得
-    const chatLogEl = document.getElementById('ai-chat-log');
-    const chatHistory = [];
-    if (chatLogEl) {
-        const messages = chatLogEl.querySelectorAll('.chat-message');
-        messages.forEach(msg => {
-            if (msg.classList.contains('loading-indicator')) return;
-            const sender = msg.classList.contains('ai') ? 'ai' : 'user';
-            const contentEl = msg.querySelector('.markdown-body, div, p');
-            const text = contentEl ? contentEl.innerHTML : (msg.innerText || '');
-            if (text && text.trim()) {
-                chatHistory.push({ sender, text });
-            }
-        });
-    }
-
-    // 2. 練習問題を実施していた場合、その結果も1つの学習記録内に統合保存
-    const scoreVal = document.getElementById('practice-score-val');
     const scoreDisp = document.getElementById('practice-score-display');
-    let hasPractice = false;
-    let practiceScoreStr = '';
     
-    if (currentPracticeQuestions && currentPracticeQuestions.length > 0 && scoreDisp && !scoreDisp.classList.contains('hidden')) {
-        hasPractice = true;
-        practiceScoreStr = scoreVal ? scoreVal.textContent : '0';
-        
-        let practiceLog = `🎯 <strong>ピンポイント練習問題（5問）結果: ${practiceScoreStr} / 100 点</strong><br><br>`;
-        currentPracticeQuestions.forEach((q, idx) => {
-            practiceLog += `<strong>【問${idx + 1}】 ${escapeHtml(q.title)}</strong><br>・正解: ${escapeHtml(q.answer)}<br>・解説: ${escapeHtml(q.explanation)}<br><br>`;
-        });
-        if (typeof lastWakaruAdvice !== 'undefined' && lastWakaruAdvice) {
-            practiceLog += `💡 <strong>わかるくんからのアドバイス:</strong><br>${convertMarkdownToHtml(lastWakaruAdvice)}`;
-        }
-        chatHistory.push({ sender: 'ai', text: practiceLog });
-    }
+    // ★ DOMから最新状態を同期し、isUnfinished を false（完了）として確定保存
+    const savedItem = syncCurrentReviewSessionFromDOM(true);
+    const savedTitle = savedItem ? savedItem.title : 'ノート解説授業';
 
-    // 3. ノート写真の取得
-    const teachingPreview = document.getElementById('teaching-image-preview');
-    let imageSrc = (teachingPreview && teachingPreview.src && teachingPreview.src.startsWith('data:')) ? teachingPreview.src : null;
+    // 練習問題状態とフォームをクリア
+    currentPracticeQuestions = [];
+    if (typeof lastWakaruAdvice !== 'undefined') lastWakaruAdvice = '';
+    if (scoreDisp) scoreDisp.classList.add('hidden');
+    const adviceBox = document.getElementById('wakaru-advice-box');
+    if (adviceBox) adviceBox.classList.add('hidden');
+    const statsBox = document.getElementById('practice-stats-box');
+    if (statsBox) statsBox.classList.add('hidden');
 
-    // 4. 動的トピック・教科の決定
-    let baseTitle = (currentSessionTopic && currentSessionTopic.title) ? currentSessionTopic.title : 'ノート解説授業';
-    let subject = (currentSessionTopic && currentSessionTopic.subject) ? currentSessionTopic.subject : '数学';
+    currentReviewSessionId = null; // セッション完了
 
-    let title = baseTitle;
-    if (hasPractice) {
-        title = `${baseTitle} ＆ 練習問題 (${practiceScoreStr}点)`;
-    } else if (chatHistory.length > 2) {
-        title = `${baseTitle}（質疑応答つき）`;
-    }
-
-    let icon = '📚';
-    if (hasPractice) {
-        icon = '🎯';
-    } else if (subject === '数学') {
-        icon = '📐';
-    } else if (subject === '理科') {
-        icon = '🧪';
-    } else if (subject === '英語') {
-        icon = '🔤';
-    } else if (subject === '社会') {
-        icon = '🏛️';
-    } else if (subject === '国語') {
-        icon = '📖';
-    }
-
-    // 5. サムネイル圧縮してから保存
-    const commitSave = (thumbSrc) => {
-        dummyHistory.unshift({
-            id: 'h_session_' + Date.now(),
-            date: dateString,
-            subject: subject,
-            title: title,
-            icon: icon,
-            image: thumbSrc,
-            chat: chatHistory
-        });
-
-        saveHistory();
-
-        // 練習問題状態とフォームをクリア
-        currentPracticeQuestions = [];
-        if (typeof lastWakaruAdvice !== 'undefined') lastWakaruAdvice = '';
-        if (scoreDisp) scoreDisp.classList.add('hidden');
-        const adviceBox = document.getElementById('wakaru-advice-box');
-        if (adviceBox) adviceBox.classList.add('hidden');
-        const statsBox = document.getElementById('practice-stats-box');
-        if (statsBox) statsBox.classList.add('hidden');
-
-        renderHistory();
-        clearFileSelect();
-        switchScreen('home');
-        showToastNotification(`✅ 学習記録「${title}」を保存しました！`);
-    };
-
-    if (imageSrc) {
-        compressImage(imageSrc, 400, 400, 0.6, (compressedThumb) => {
-            commitSave(compressedThumb);
-        });
-    } else {
-        commitSave(null);
-    }
+    renderHistory();
+    clearFileSelect();
+    switchScreen('home');
+    showToastNotification(`✅ 学習記録「${savedTitle}」を保存しました！`);
 }
 
 function finishReviewAndSave() {
@@ -1592,6 +1753,12 @@ function escapeHtml(str) {
 // 🔄 画面を切り替える関数（ふわっと滑らかなクロスフェード遷移）
 // ==========================================
 function switchScreen(screenId) {
+    // 復習セッション進行中に別画面へ遷移した場合、セッションを未終了データとして自動保存・完了
+    if (currentReviewSessionId && screenId !== 'ai-response' && screenId !== 'practice-paper' && screenId !== 'loading') {
+        syncCurrentReviewSessionFromDOM(false);
+        currentReviewSessionId = null;
+    }
+
     if (screenId === 'test') {
         loadHistory();
         updateTestScreenState();
@@ -1619,6 +1786,19 @@ function switchScreen(screenId) {
     if (card) card.scrollTop = 0;
     window.scrollTo(0, 0);
 }
+
+// ページ離脱・更新時にも未終了セッションを確実に同期保存
+window.addEventListener('beforeunload', () => {
+    if (currentReviewSessionId) {
+        syncCurrentReviewSessionFromDOM(false);
+    }
+});
+
+window.addEventListener('pagehide', () => {
+    if (currentReviewSessionId) {
+        syncCurrentReviewSessionFromDOM(false);
+    }
+});
 
 /**
  * ホーム画面の「テスト」ボタンをクリックしたときのハンドラ
@@ -2411,7 +2591,8 @@ function openHistoryChat(id) {
     activeHistoryItem = item;
 
     // タイトルと日付を設定
-    document.getElementById('history-chat-title').innerHTML = `✨ 過去の解説授業：${escapeHtml(item.title)}`;
+    const unfinishedTag = item.isUnfinished ? ' <span class="unfinished-status-tag" title="この学習は途中で中断された記録です">⚠️ 未終了</span>' : '';
+    document.getElementById('history-chat-title').innerHTML = `✨ 過去の解説授業：${escapeHtml(item.title)}${unfinishedTag}`;
     document.getElementById('history-chat-date').textContent = `学習日：${item.date}`;
 
     // 画像またはプレビュープレースホルダーの設定
@@ -3407,6 +3588,9 @@ let currentPracticeQuestions = [];
  * やった内容に合わせた問題5問をGemini APIまたはフォールバックで生成
  */
 async function goToPracticeQuestions() {
+    // 進行中の復習セッションの最新状態を同期保存
+    syncCurrentReviewSessionFromDOM(false);
+
     // ローディング画面で進捗提示
     switchScreen('loading');
     const loadingText = document.querySelector('#loading-screen h3');
@@ -4003,6 +4187,7 @@ ${profilePrompt}
 
     lastWakaruAdvice = adviceContent;
     adviceTextEl.innerHTML = convertMarkdownToHtml(adviceContent);
+    syncCurrentReviewSessionFromDOM(false);
 }
 
 /**
